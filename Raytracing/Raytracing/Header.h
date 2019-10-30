@@ -32,6 +32,7 @@ struct Fence
 	void* event;
 
 	Fence() {
+		ptr   = nullptr;
 		cnt   = 0;
 		event = CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS);
 	}
@@ -44,4 +45,35 @@ struct Render
 	ID3D12DescriptorHeap* heap;
 	//リソース
 	std::vector<ID3D12Resource*>rsc;
+
+	Render() {
+		heap = nullptr;
+	}
+};
+
+// 3次元
+struct Vector3
+{
+	float x;
+	float y;
+	float z;
+
+	Vector3() {
+		x = y = z = 0.0f;
+	}
+	Vector3(const float& x, const float& y, const float& z) : 
+		x(x), y(y), z(z){}
+	Vector3(const Vector3& vec) {
+		(*this) = vec;
+	}
+	void operator=(const Vector3& vec) {
+		x = vec.x;
+		y = vec.y;
+		z = vec.z;
+	}
+};
+
+// クリアカラー
+float color[] = {
+	1.0f, 1.0f, 1.0f, 1.0f
 };
