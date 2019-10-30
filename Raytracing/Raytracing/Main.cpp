@@ -12,14 +12,12 @@ long __stdcall WindowProc(void* hWnd, unsigned int message, unsigned int wParam,
 {
 	switch (message)
 	{
-	case WM_DESTROY:
-	{
-		PostQuitMessage(0);
+	case WM_CLOSE:
 		DestroyWindow(HWND(hWnd));
-		auto wnd = (LPWNDCLASSEX)GetWindowLongPtr(HWND(hWnd), GWLP_HINSTANCE);
-		UnregisterClass(wnd->lpszClassName, wnd->hInstance);
 		return 0;
-	}
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
 	default:
 		break;
 	}
@@ -31,14 +29,28 @@ long __stdcall WindowProc(void* hWnd, unsigned int message, unsigned int wParam,
 bool CheckMsg(void)
 {
 	static MSG msg{};
-	if (msg.message == WM_QUIT)
-	{
-		return false;
-	}
+	static const wchar_t* name = nullptr;
+	static void* instance = nullptr;
 
 	//呼び出し側スレッドが所有しているウィンドウに送信されたメッセージの保留されている物を取得
 	if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
+		switch (msg.message)
+		{
+		case WM_CREATE:
+		{
+			auto wnd = (LPWNDCLASSEX)GetWindowLongPtr(msg.hwnd, GWLP_HINSTANCE);
+			name     = wnd->lpszClassName;
+			instance = wnd->hInstance;
+			break;
+		}
+		case WM_QUIT:
+			UnregisterClass(name, HINSTANCE(instance));
+			return false;
+		default:
+			break;
+		}
+
 		//仮想キーメッセージを文字メッセージに変換
 		TranslateMessage(&msg);
 		//1つのウィドウプロシージャにメッセージを送出する
@@ -82,6 +94,47 @@ void CreateSwapChain(IDXGIFactory7* factory, ID3D12CommandQueue* queue, void* wi
 
 	auto hr = factory->CreateSwapChainForHwnd(queue, HWND(winHandle), &desc, nullptr, nullptr, (IDXGISwapChain1**)&(*swap));
 	_ASSERT(hr == S_OK);
+}
+
+// コマンドアロケータ生成
+void CreateCommandAllocator(ID3D12Device5* device, ID3D12CommandAllocator** allocator, const D3D12_COMMAND_LIST_TYPE& type)
+{
+	auto hr = device->CreateCommandAllocator(type, IID_PPV_ARGS(&(*allocator)));
+	_ASSERT(hr == S_OK);
+}
+
+// コマンドリスト生成
+void CreateCommandList(ID3D12Device5* device, ID3D12GraphicsCommandList5** list, const D3D12_COMMAND_LIST_TYPE& type)
+{
+	auto hr = device->CreateCommandList1(0, type, D3D12_COMMAND_LIST_FLAGS::D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&(*list)));
+	_ASSERT(hr == S_OK);
+}
+
+// ヒープ生成
+void CreateHeap(ID3D12Device5* device, ID3D12DescriptorHeap** heap, const D3D12_DESCRIPTOR_HEAP_TYPE& type, const unsigned int& num = 1, 
+	const D3D12_DESCRIPTOR_HEAP_FLAGS& flag = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC desc{};
+	desc.Flags          = flag;
+	desc.NodeMask       = 0;
+	desc.NumDescriptors = num;
+	desc.Type           = type;
+
+	auto hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&(*heap)));
+	_ASSERT(hr == S_OK);
+}
+
+// レンダーターゲットビュー生成
+void CreateRTV(ID3D12Device5* device, ID3D12DescriptorHeap* heap, ID3D12Resource* rsc, const unsigned int& index = 0)
+{
+	D3D12_RENDER_TARGET_VIEW_DESC desc{};
+	desc.Format             = rsc->GetDesc().Format;
+	desc.ViewDimension      = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
+	desc.Texture2D.MipSlice = 0;
+
+	auto handle = heap->GetCPUDescriptorHandleForHeapStart();
+	handle.ptr += index * device->GetDescriptorHandleIncrementSize(heap->GetDesc().Type);
+	device->CreateRenderTargetView(rsc, &desc, handle);
 }
 
 // エントリーポイント
@@ -148,31 +201,73 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					goto Check;
 				}
 			}
-
-		Check:
-			//レイトレーシングのサポートチェック
-			D3D12_FEATURE_DATA_D3D12_OPTIONS5 option{};
-			auto hr = device->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_D3D12_OPTIONS5, &option, sizeof(option));
-			_ASSERT(hr == S_OK);
-
-			if (option.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
-			{
-				break;
-			}
 		}
+
+	Check:
+		//レイトレーシングのサポートチェック
+		D3D12_FEATURE_DATA_D3D12_OPTIONS5 option{};
+		auto hr = device->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_D3D12_OPTIONS5, &option, sizeof(option));
+		_ASSERT(hr == S_OK);
+
+		//_ASSERT(option.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED);
 	}
 
 	//コマンドキュー生成
 	ID3D12CommandQueue* queue = nullptr;
-	/*{
+	{
 		CreateCommandQueue(device, &queue, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-	}*/
+	}
 
-	// スワップチェイン生成
+	//スワップチェイン生成
 	IDXGISwapChain4* swap = nullptr;
-	/*{
-		CreateSwapChain(factory, queue, winHandle, &swap, 3);
-	}*/
+	{
+		CreateSwapChain(factory, queue, winHandle, &swap, BACK_BUFFER);
+	}
+
+	//コマンドアロケータ生成
+	std::vector<ID3D12CommandAllocator*>allocator;
+	{
+		DXGI_SWAP_CHAIN_DESC1 desc{};
+		auto hr = swap->GetDesc1(&desc);
+		_ASSERT(hr == S_OK);
+
+		allocator.resize(desc.BufferCount);
+		for (auto& i : allocator)
+		{
+			CreateCommandAllocator(device, &i, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+		}
+	}
+
+	//コマンドリスト生成
+	ID3D12GraphicsCommandList5* list = nullptr;
+	{
+		CreateCommandList(device, &list, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+	}
+
+	//フェンス生成
+	Fence fence;
+	{
+		auto hr = device->CreateFence(fence.cnt, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence.ptr));
+		_ASSERT(hr == S_OK);
+	}
+
+	//レンダーターゲット生成
+	Render render;
+	{
+		DXGI_SWAP_CHAIN_DESC1 desc{};
+		auto hr = swap->GetDesc1(&desc);
+		_ASSERT(hr == S_OK);
+		CreateHeap(device, &render.heap, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV, desc.BufferCount);
+
+		render.rsc.resize(desc.BufferCount);
+		for (unsigned int i = 0; i < desc.BufferCount; ++i)
+		{
+			hr = swap->GetBuffer(i, IID_PPV_ARGS(&render.rsc[i]));
+			_ASSERT(hr == S_OK);
+
+			CreateRTV(device, render.heap, render.rsc[i], i);
+		}
+	}
 
 	while (CheckMsg() == true && !(GetKeyState(VK_ESCAPE) & 0x80))
 	{
@@ -181,6 +276,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
+		for (auto& i : render.rsc)
+		{
+			Release(i);
+		}
+		Release(render.heap);
+		Release(list);
+		for (auto& i : allocator)
+		{
+			Release(i);
+		}
 		Release(swap);
 		Release(queue);
 		Release(device);
