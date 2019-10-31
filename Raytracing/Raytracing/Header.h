@@ -51,6 +51,22 @@ struct Render
 	}
 };
 
+// â¡ë¨ç\ë¢
+struct Acceleration
+{
+	ID3D12Resource* scratch;
+	ID3D12Resource* result;
+	ID3D12Resource* instance;
+	D3D12_RAYTRACING_GEOMETRY_DESC geoDesc;
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input;
+
+	Acceleration() {
+		scratch = result = instance = nullptr;
+		geoDesc = {};
+		input = {};
+	}
+};
+
 // 3éüå≥
 struct Vector3
 {

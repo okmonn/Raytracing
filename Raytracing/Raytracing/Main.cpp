@@ -202,18 +202,16 @@ void ClearRenderTarget(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, 
 }
 
 // トップレベル加速構造の生成
-void CreateTopLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, ID3D12Resource** rsc, ID3D12Resource* bottom)
+void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acceleration& bottom)
 {
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
-	input.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	input.Flags       = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	input.NumDescs    = 1;
-	input.Type        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	acceleration.input.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	acceleration.input.Flags       = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	acceleration.input.NumDescs    = 1;
+	acceleration.input.Type        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
-	device->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+	device->GetRaytracingAccelerationStructurePrebuildInfo(&acceleration.input, &info);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>scratch = nullptr;
 	{
 		D3D12_HEAP_PROPERTIES prop{};
 		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -234,13 +232,12 @@ void CreateTopLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, ID3
 		desc.SampleDesc       = { 1, 0 };
 		desc.Width            = info.ScratchDataSizeInBytes;
 
-		CreateRsc(device, &scratch, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		CreateRsc(device, &acceleration.scratch, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
 		desc.Width = info.ResultDataMaxSizeInBytes;
-		CreateRsc(device, rsc, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+		CreateRsc(device, &acceleration.result, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>instance = nullptr;
 	{
 		D3D12_HEAP_PROPERTIES prop{};
 		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -261,13 +258,13 @@ void CreateTopLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, ID3
 		desc.SampleDesc       = { 1, 0 };
 		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
 
-		CreateRsc(device, &instance, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+		CreateRsc(device, &acceleration.instance, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 
 	D3D12_RAYTRACING_INSTANCE_DESC* ptr = nullptr;
-	auto hr = instance->Map(0, nullptr, (void**)&ptr);
+	auto hr = acceleration.instance->Map(0, nullptr, (void**)&ptr);
 	_ASSERT(hr == S_OK);
-	ptr->AccelerationStructure               = bottom->GetGPUVirtualAddress();
+	ptr->AccelerationStructure               = bottom.result->GetGPUVirtualAddress();
 	ptr->Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 	ptr->InstanceContributionToHitGroupIndex = 0;
 	ptr->InstanceID                          = 0;
@@ -278,75 +275,68 @@ void CreateTopLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, ID3
 		{ 0.0f, 0.0f, 1.0f, 0.0f }
 	};
 	memcpy(ptr->Transform, &mat, sizeof(mat));
-	instance->Unmap(0, nullptr);
-
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
-	desc.DestAccelerationStructureData    = (*rsc)->GetGPUVirtualAddress();
-	desc.Inputs                           = input;
-	desc.Inputs.InstanceDescs             = instance->GetGPUVirtualAddress();
-	desc.ScratchAccelerationStructureData = scratch->GetGPUVirtualAddress();
-
-	list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
-
-	Barrier(list, *rsc);
+	acceleration.instance->Unmap(0, nullptr);
 }
 
 // ボトムレベル加速構造の生成
-void CreateBottomLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, ID3D12Resource** rsc, ID3D12Resource* vertex)
+void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12Resource* vertex)
 {
-	D3D12_RAYTRACING_GEOMETRY_DESC geoDesc{};
-	geoDesc.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-	geoDesc.Triangles.VertexBuffer.StartAddress  = vertex->GetGPUVirtualAddress();
-	geoDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vector3);
-	geoDesc.Triangles.VertexCount                = unsigned int(vertex->GetDesc().Width / geoDesc.Triangles.VertexBuffer.StrideInBytes);
-	geoDesc.Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-	geoDesc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	acceleration.geoDesc.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	acceleration.geoDesc.Triangles.VertexBuffer.StartAddress  = vertex->GetGPUVirtualAddress();
+	acceleration.geoDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vector3);
+	acceleration.geoDesc.Triangles.VertexCount                = unsigned int(vertex->GetDesc().Width / acceleration.geoDesc.Triangles.VertexBuffer.StrideInBytes);
+	acceleration.geoDesc.Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+	acceleration.geoDesc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
-	input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	input.NumDescs       = 1;
-	input.pGeometryDescs = &geoDesc;
-	input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+	acceleration.input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	acceleration.input.NumDescs       = 1;
+	acceleration.input.pGeometryDescs = &acceleration.geoDesc;
+	acceleration.input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
-	device->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+	device->GetRaytracingAccelerationStructurePrebuildInfo(&acceleration.input, &info);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>scratch = nullptr;
-	{
-		D3D12_HEAP_PROPERTIES prop{};
-		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		prop.CreationNodeMask     = 0;
-		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
-		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
-		prop.VisibleNodeMask      = 0;
+	D3D12_HEAP_PROPERTIES prop{};
+	prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	prop.CreationNodeMask     = 0;
+	prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+	prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+	prop.VisibleNodeMask      = 0;
 
-		D3D12_RESOURCE_DESC desc{};
-		desc.Alignment        = 0;
-		desc.DepthOrArraySize = 1;
-		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-		desc.Height           = 1;
-		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		desc.MipLevels        = 1;
-		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = info.ScratchDataSizeInBytes;
+	D3D12_RESOURCE_DESC desc{};
+	desc.Alignment        = 0;
+	desc.DepthOrArraySize = 1;
+	desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+	desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+	desc.Height           = 1;
+	desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	desc.MipLevels        = 1;
+	desc.SampleDesc       = { 1, 0 };
+	desc.Width            = info.ScratchDataSizeInBytes;
 
-		CreateRsc(device, &scratch, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	CreateRsc(device, &acceleration.scratch, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-		desc.Width = info.ResultDataMaxSizeInBytes;
-		CreateRsc(device, rsc, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
-	}
+	desc.Width = info.ResultDataMaxSizeInBytes;
+	CreateRsc(device, &acceleration.result, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+}
 
+// 加速構造のビルド
+void BuildAcceleration(ID3D12GraphicsCommandList5* list, const Acceleration& acceleration)
+{
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
-	desc.DestAccelerationStructureData    = (*rsc)->GetGPUVirtualAddress();
-	desc.Inputs                           = input;
-	desc.ScratchAccelerationStructureData =  scratch->GetGPUVirtualAddress();
+	desc.DestAccelerationStructureData    = acceleration.result->GetGPUVirtualAddress();
+	desc.Inputs                           = acceleration.input;
+	desc.ScratchAccelerationStructureData = acceleration.scratch->GetGPUVirtualAddress();
+	if (acceleration.instance != nullptr)
+	{
+		desc.SourceAccelerationStructureData = acceleration.instance->GetGPUVirtualAddress();
+	}
 
 	list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 
-	Barrier(list, *rsc);
+	Barrier(list, acceleration.result);
 }
 
 // コマンド初期化
@@ -371,7 +361,7 @@ void Execution(ID3D12CommandQueue* queue, IDXGISwapChain4* swap, ID3D12GraphicsC
 	auto hr = queue->Signal(fence.ptr, ++fence.cnt);
 	_ASSERT(hr == S_OK);
 
-	hr = swap->Present(1, 0);
+	hr = swap->Present(0, 0);
 	_ASSERT(hr == S_OK);
 
 	if (fence.ptr->GetCompletedValue() != fence.cnt)
@@ -561,13 +551,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//ボトムレベル加速構造
-	ID3D12Resource* bottomLevel = nullptr;
+	Acceleration bottom;
 	{
+		CreateBottomLevel(device, bottom, box);
 	}
 
 	//トップレベル加速構造
-	ID3D12Resource* topLevel = nullptr;
+	Acceleration top;
 	{
+		CreateTopLevel(device, top, bottom);
 	}
 
 	while (CheckMsg() == true && !(GetKeyState(VK_ESCAPE) & 0x80))
@@ -575,8 +567,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		unsigned int index = swap->GetCurrentBackBufferIndex();
 		InitCommand(allocator[index], list);
 
-		CreateBottomLevel(device, list, &bottomLevel, box);
-		CreateTopLevel(device, list, &topLevel, bottomLevel);
+		BuildAcceleration(list, bottom);
+		BuildAcceleration(list, top);
 
 		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 		ClearRenderTarget(device, list, render, index, color);
@@ -587,8 +579,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
-		Release(topLevel);
-		Release(bottomLevel);
+		Release(top.instance);
+		Release(top.result);
+		Release(top.scratch);
+		Release(bottom.instance);
+		Release(bottom.result);
+		Release(bottom.scratch);
 		Release(box);
 		for (auto& i : render.rsc)
 		{
