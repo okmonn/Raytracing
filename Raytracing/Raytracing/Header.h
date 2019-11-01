@@ -1,7 +1,6 @@
 #pragma once
+#include "ShaderLibrary.h"
 #include <wrl.h>
-#include <vector>
-#include <d3d12.h>
 #include <dxgi1_6.h>
 
 // メモリ開放
@@ -64,6 +63,20 @@ struct Acceleration
 		scratch = result = instance = nullptr;
 		geoDesc = {};
 		input = {};
+	}
+};
+
+// ルートシグネチャ
+struct RootSignature
+{
+	ID3D12RootSignature* root;
+	std::vector<D3D12_DESCRIPTOR_RANGE>range;
+	std::vector<D3D12_ROOT_PARAMETER>param;
+
+	RootSignature() {
+		root = nullptr;
+		range = {};
+		param = {};
 	}
 };
 

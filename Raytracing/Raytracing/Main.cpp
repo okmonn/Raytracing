@@ -104,9 +104,8 @@ void CreateCommandAllocator(ID3D12Device5* device, ID3D12CommandAllocator** allo
 }
 
 // コマンドリスト生成
-void CreateCommandList(ID3D12Device5* device, ID3D12CommandAllocator* allocator, ID3D12GraphicsCommandList5** list, const D3D12_COMMAND_LIST_TYPE& type)
+void CreateCommandList(ID3D12Device5* device, ID3D12GraphicsCommandList5** list, const D3D12_COMMAND_LIST_TYPE& type)
 {
-	//auto hr = device->CreateCommandList(0, type, allocator, nullptr, IID_PPV_ARGS(&(*list)));
 	auto hr = device->CreateCommandList1(0, type, D3D12_COMMAND_LIST_FLAGS::D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&(*list)));
 	_ASSERT(hr == S_OK);
 }
@@ -204,10 +203,34 @@ void ClearRenderTarget(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, 
 // トップレベル加速構造の生成
 void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acceleration& bottom)
 {
-	acceleration.input.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	acceleration.input.Flags       = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	acceleration.input.NumDescs    = 1;
-	acceleration.input.Type        = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	{
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+
+		CreateRsc(device, &acceleration.instance, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+	}
+
+	acceleration.input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	acceleration.input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	acceleration.input.NumDescs      = 1;
+	acceleration.input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	acceleration.input.InstanceDescs = acceleration.instance->GetGPUVirtualAddress();
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
 	device->GetRaytracingAccelerationStructurePrebuildInfo(&acceleration.input, &info);
@@ -238,29 +261,6 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 		CreateRsc(device, &acceleration.result, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
 	}
 
-	{
-		D3D12_HEAP_PROPERTIES prop{};
-		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		prop.CreationNodeMask     = 0;
-		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
-		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
-		prop.VisibleNodeMask      = 0;
-
-		D3D12_RESOURCE_DESC desc{};
-		desc.Alignment        = 0;
-		desc.DepthOrArraySize = 1;
-		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
-		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-		desc.Height           = 1;
-		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		desc.MipLevels        = 1;
-		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
-
-		CreateRsc(device, &acceleration.instance, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
-	}
-
 	D3D12_RAYTRACING_INSTANCE_DESC* ptr = nullptr;
 	auto hr = acceleration.instance->Map(0, nullptr, (void**)&ptr);
 	_ASSERT(hr == S_OK);
@@ -268,7 +268,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	ptr->Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 	ptr->InstanceContributionToHitGroupIndex = 0;
 	ptr->InstanceID                          = 0;
-	ptr->InstanceMask                        = 0xff;
+	ptr->InstanceMask                        = 1;
 	float mat[3][4] = {
 		{ 1.0f, 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f, 0.0f },
@@ -289,7 +289,7 @@ void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12
 	acceleration.geoDesc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 
 	acceleration.input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 	acceleration.input.NumDescs       = 1;
 	acceleration.input.pGeometryDescs = &acceleration.geoDesc;
 	acceleration.input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
@@ -331,7 +331,7 @@ void BuildAcceleration(ID3D12GraphicsCommandList5* list, const Acceleration& acc
 	desc.ScratchAccelerationStructureData = acceleration.scratch->GetGPUVirtualAddress();
 	if (acceleration.instance != nullptr)
 	{
-		desc.SourceAccelerationStructureData = acceleration.instance->GetGPUVirtualAddress();
+		//desc.SourceAccelerationStructureData = acceleration.instance->GetGPUVirtualAddress();
 	}
 
 	list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
@@ -347,9 +347,6 @@ void InitCommand(ID3D12CommandAllocator* allocator, ID3D12GraphicsCommandList5* 
 
 	hr = list->Reset(allocator, pipe);
 	_ASSERT(hr == S_OK);
-
-	Viewport(list, WINSIZE_X, WINSIZE_Y);
-	Scissor(list, WINSIZE_X, WINSIZE_Y);
 }
 
 // コマンド実行
@@ -371,6 +368,47 @@ void Execution(ID3D12CommandQueue* queue, IDXGISwapChain4* swap, ID3D12GraphicsC
 
 		WaitForSingleObject(fence.event, INFINITE);
 	}
+}
+
+// ルートシグネチャ生成
+void CreateRoot(ID3D12Device5* device, RootSignature& rootsignature, const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
+	auto hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &sig, nullptr);
+	_ASSERT(hr == S_OK);
+
+	hr = device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&rootsignature.root));
+	_ASSERT(hr == S_OK);
+}
+
+// レイジェネレーション用ルートシグネチャ生成
+void CreateRayGenRoot(ID3D12Device5* device, RootSignature& rootsignature)
+{
+	rootsignature.range.resize(2);
+	//output
+	rootsignature.range[0].BaseShaderRegister                = 0;
+	rootsignature.range[0].NumDescriptors                    = 1;
+	rootsignature.range[0].OffsetInDescriptorsFromTableStart = 0;
+	rootsignature.range[0].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	rootsignature.range[0].RegisterSpace                     = 0;
+	//scene
+	rootsignature.range[1].BaseShaderRegister                = 0;
+	rootsignature.range[1].NumDescriptors                    = 1;
+	rootsignature.range[1].OffsetInDescriptorsFromTableStart = 0;
+	rootsignature.range[1].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	rootsignature.range[1].RegisterSpace                     = 0;
+
+	rootsignature.param.resize(1);
+	rootsignature.param[0].DescriptorTable.NumDescriptorRanges = unsigned int(rootsignature.range.size());
+	rootsignature.param[0].DescriptorTable.pDescriptorRanges   = rootsignature.range.data();
+	rootsignature.param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	D3D12_ROOT_SIGNATURE_DESC desc{};
+	desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	desc.NumParameters = unsigned int(rootsignature.param.size());
+	desc.pParameters   = rootsignature.param.data();
+
+	CreateRoot(device, rootsignature, desc);
 }
 
 // エントリーポイント
@@ -484,7 +522,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//コマンドリスト生成
 	ID3D12GraphicsCommandList5* list = nullptr;
 	{
-		CreateCommandList(device, allocator[0], &list, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+		CreateCommandList(device, &list, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 	}
 
 	//フェンス生成
@@ -554,21 +592,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Acceleration bottom;
 	{
 		CreateBottomLevel(device, bottom, box);
+		InitCommand(allocator[0], list);
+		BuildAcceleration(list, bottom);
+		Execution(queue, swap, list, fence);
 	}
 
 	//トップレベル加速構造
 	Acceleration top;
 	{
 		CreateTopLevel(device, top, bottom);
+		InitCommand(allocator[0], list);
+		BuildAcceleration(list, top);
+		Execution(queue, swap, list, fence);
+	}
+
+	ShaderLibrary::Get().Compile(L"sample.hlsl", { L"rayGen", L"miss", L"chs" }, L"lib_6_3");
+
+	//ルートシグネチャ生成
+	RootSignature rootsignature;
+	{
 	}
 
 	while (CheckMsg() == true && !(GetKeyState(VK_ESCAPE) & 0x80))
 	{
 		unsigned int index = swap->GetCurrentBackBufferIndex();
 		InitCommand(allocator[index], list);
-
-		BuildAcceleration(list, bottom);
-		BuildAcceleration(list, top);
 
 		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 		ClearRenderTarget(device, list, render, index, color);
