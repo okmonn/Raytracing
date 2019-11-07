@@ -80,6 +80,26 @@ struct RootSignature
 	}
 };
 
+// ìñÇΩÇËèÓïÒ
+struct Hit
+{
+	std::wstring name;
+	D3D12_HIT_GROUP_DESC desc;
+	D3D12_STATE_SUBOBJECT sub;
+
+	Hit(const LPWSTR& anyHit, const LPWSTR& closestHit, const std::wstring& name)
+		: name(name)
+	{
+		desc.AnyHitShaderImport       = anyHit;
+		desc.ClosestHitShaderImport   = closestHit;
+		desc.HitGroupExport           = name.c_str();
+		desc.IntersectionShaderImport = nullptr;
+		desc.Type                     = D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES;
+
+		sub.pDesc = 
+	}
+};
+
 // 3éüå≥
 struct Vector3
 {

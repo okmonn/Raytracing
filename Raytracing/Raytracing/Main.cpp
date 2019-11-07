@@ -613,7 +613,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 	}
 
-	while (CheckMsg() == true && !(GetKeyState(VK_ESCAPE) & 0x80))
+	while (CheckMsg() == true)
 	{
 		unsigned int index = swap->GetCurrentBackBufferIndex();
 		InitCommand(allocator[index], list);
