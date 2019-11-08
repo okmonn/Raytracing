@@ -92,6 +92,17 @@ void ShaderLibrary::Compile(const std::wstring& fileName, const std::initializer
 	}
 }
 
+// ステータスオブジェクト取得
+D3D12_STATE_SUBOBJECT ShaderLibrary::GetSubObject(const std::wstring& fileName)
+{
+	if (hlsl.find(fileName) != hlsl.end())
+	{
+		return hlsl[fileName].state;
+	}
+
+	return D3D12_STATE_SUBOBJECT();
+}
+
 // シェーダバイトコード取得
 D3D12_SHADER_BYTECODE ShaderLibrary::GetByteCode(const std::wstring& fileName)
 {

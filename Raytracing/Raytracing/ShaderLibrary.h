@@ -32,6 +32,9 @@ public:
 	// シェーダコンパイル
 	void Compile(const std::wstring& fileName, const std::initializer_list<std::wstring>& entry, const std::wstring& ver);
 
+	// ステータスオブジェクト取得
+	D3D12_STATE_SUBOBJECT GetSubObject(const std::wstring& fileName);
+
 	// シェーダバイトコード取得
 	D3D12_SHADER_BYTECODE GetByteCode(const std::wstring& fileName);
 

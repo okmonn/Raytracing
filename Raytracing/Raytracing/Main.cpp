@@ -606,11 +606,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Execution(queue, swap, list, fence);
 	}
 
+	//シェーダコンパイル
 	ShaderLibrary::Get().Compile(L"sample.hlsl", { L"rayGen", L"miss", L"chs" }, L"lib_6_3");
 
-	//ルートシグネチャ生成
-	RootSignature rootsignature;
+	std::array<D3D12_STATE_SUBOBJECT, 10>sub;
 	{
+		unsigned int index = 0;
+		sub[index++] = ShaderLibrary::Get().GetSubObject(L"sample.hlsl");
+
+		Hit hit(nullptr, L"chs", L"HitGroup");
+		sub[index++] = hit.sub;
+
+		LocalRoot local;
+		CreateRayGenRoot(device, local.rootsignature);
+		sub[index] = local.sub;
+
+		unsigned int rootIndex = index++;
+		Association association(L"rayGen", 1, &sub[rootIndex]);
+		sub[index++] = association.sub;
 	}
 
 	while (CheckMsg() == true)

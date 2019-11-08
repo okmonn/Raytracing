@@ -1,6 +1,7 @@
 #pragma once
 #include "ShaderLibrary.h"
 #include <wrl.h>
+#include <array>
 #include <dxgi1_6.h>
 
 // メモリ開放
@@ -87,7 +88,7 @@ struct Hit
 	D3D12_HIT_GROUP_DESC desc;
 	D3D12_STATE_SUBOBJECT sub;
 
-	Hit(const LPWSTR& anyHit, const LPWSTR& closestHit, const std::wstring& name)
+	Hit(LPCWSTR anyHit, LPCWSTR closestHit, const std::wstring& name)
 		: name(name)
 	{
 		desc.AnyHitShaderImport       = anyHit;
@@ -96,7 +97,96 @@ struct Hit
 		desc.IntersectionShaderImport = nullptr;
 		desc.Type                     = D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES;
 
-		sub.pDesc = 
+		sub.pDesc = &desc;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+	}
+};
+
+// 
+struct Association
+{
+	D3D12_STATE_SUBOBJECT sub;
+	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION association;
+
+	Association(LPCWSTR name, const unsigned int& cnt, const D3D12_STATE_SUBOBJECT* subObject) {
+		association.NumExports            = cnt;
+		association.pExports              = &name;
+		association.pSubobjectToAssociate = subObject;
+
+		sub.pDesc = &association;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+	}
+};
+
+void CreateRoot(ID3D12Device5* device, RootSignature& rootsignature, const D3D12_ROOT_SIGNATURE_DESC& desc);
+
+// ローカルルートシグネチャ
+struct LocalRoot
+{
+	RootSignature rootsignature;
+	D3D12_STATE_SUBOBJECT sub;
+
+	LocalRoot() {
+		sub.pDesc = &rootsignature.root;
+		sub.Type = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+	}
+	LocalRoot(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_DESC& desc) {
+		CreateRoot(device, rootsignature, desc);
+
+		sub.pDesc = &rootsignature.root;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+	}
+	~LocalRoot() {
+		Release(rootsignature.root);
+	}
+};
+
+// グローバルルートシグネチャ
+struct GlobalRoot
+{
+	RootSignature rootsignature;
+	D3D12_STATE_SUBOBJECT sub;
+
+	GlobalRoot() {
+		sub.Type = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+	}
+	GlobalRoot(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_DESC& desc) {
+		CreateRoot(device, rootsignature, desc);
+
+		sub.pDesc = &rootsignature.root;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+	}
+	~GlobalRoot() {
+		Release(rootsignature.root);
+	}
+};
+
+// シェーダ構成
+struct ShaderConfig
+{
+	D3D12_RAYTRACING_SHADER_CONFIG config;
+	D3D12_STATE_SUBOBJECT sub;
+
+	ShaderConfig(const unsigned int& attributeSize, const unsigned int& payloadSize) {
+		config.MaxAttributeSizeInBytes = attributeSize;
+		config.MaxPayloadSizeInBytes   = payloadSize;
+
+		sub.pDesc = &config;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+	}
+};
+
+// パイプライン構成
+struct PipeConfig
+{
+	D3D12_RAYTRACING_PIPELINE_CONFIG config;
+	D3D12_STATE_SUBOBJECT sub;
+
+	PipeConfig(const unsigned int& traceDepth) {
+		config.MaxTraceRecursionDepth = traceDepth;
+
+		sub.pDesc = &config;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
 	}
 };
 
