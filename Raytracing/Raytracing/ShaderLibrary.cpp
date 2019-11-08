@@ -67,8 +67,7 @@ void ShaderLibrary::Compile(const std::wstring& fileName, const std::initializer
 {
 	if (hlsl.find(fileName) == hlsl.end())
 	{
-		Microsoft::WRL::ComPtr<IDxcBlob>blob = nullptr;
-		Compile(fileName, ver, &blob);
+		Compile(fileName, ver, &hlsl[fileName].blob);
 
 		hlsl[fileName].funcName.resize(entry.size());
 		hlsl[fileName].desc.resize(entry.size());
@@ -82,8 +81,8 @@ void ShaderLibrary::Compile(const std::wstring& fileName, const std::initializer
 			++index;
 		}
 
-		hlsl[fileName].library.DXILLibrary.BytecodeLength  = blob->GetBufferSize();
-		hlsl[fileName].library.DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
+		hlsl[fileName].library.DXILLibrary.BytecodeLength  = hlsl[fileName].blob->GetBufferSize();
+		hlsl[fileName].library.DXILLibrary.pShaderBytecode = hlsl[fileName].blob->GetBufferPointer();
 		hlsl[fileName].library.NumExports                  = hlsl[fileName].desc.size();
 		hlsl[fileName].library.pExports                    = hlsl[fileName].desc.data();
 		

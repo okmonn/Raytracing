@@ -607,23 +607,64 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//シェーダコンパイル
-	ShaderLibrary::Get().Compile(L"sample.hlsl", { L"rayGen", L"miss", L"chs" }, L"lib_6_3");
+	ShaderLibrary::Get().Compile(L"sample.hlsl", { kRayGenShader, kMissShader, kClosestHitShader }, L"lib_6_3");
 
 	std::array<D3D12_STATE_SUBOBJECT, 10>sub;
+	ID3D12RootSignature* root = nullptr;
+	ID3D12PipelineState* pipe = nullptr;
 	{
 		unsigned int index = 0;
 		sub[index++] = ShaderLibrary::Get().GetSubObject(L"sample.hlsl");
 
-		Hit hit(nullptr, L"chs", L"HitGroup");
+		Hit hit(nullptr, kClosestHitShader, kHitGroup);
 		sub[index++] = hit.sub;
 
-		LocalRoot local;
-		CreateRayGenRoot(device, local.rootsignature);
-		sub[index] = local.sub;
+		LocalRoot raygen;
+		CreateRayGenRoot(device, raygen.rootsignature);
+		sub[index] = raygen.sub;
 
 		unsigned int rootIndex = index++;
-		Association association(L"rayGen", 1, &sub[rootIndex]);
-		sub[index++] = association.sub;
+		Association association1(&kRayGenShader, 1, &sub[rootIndex]);
+		sub[index++] = association1.sub;
+
+		D3D12_ROOT_SIGNATURE_DESC rootDesc{};
+		rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+		LocalRoot hitMiss(device, rootDesc);
+		sub[index] = hitMiss.sub;
+
+		rootIndex = index++;
+		const WCHAR* missHitName[] = {
+			kMissShader, 
+			kClosestHitShader
+		};
+		Association association2(missHitName, _countof(missHitName), &sub[rootIndex]);
+		sub[index++] = association2.sub;
+
+		ShaderConfig sCon(sizeof(float) * 2, sizeof(float) * 1);
+		sub[index] = sCon.sub;
+
+		rootIndex = index++;
+		const WCHAR* shader[] = {
+			 kMissShader, 
+			 kClosestHitShader,
+			 kRayGenShader
+		};
+		Association association3(shader, _countof(shader), &sub[rootIndex]);
+		sub[index++] = association3.sub;
+
+		PipeConfig pCon(0);
+		sub[index++] = pCon.sub;
+
+		GlobalRoot global(device, {});
+		global.rootsignature.root->QueryInterface(&root);
+		sub[index++] = global.sub;
+
+		D3D12_STATE_OBJECT_DESC desc{};
+		desc.NumSubobjects = index;
+		desc.pSubobjects   = sub.data();
+		desc.Type          = D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+		hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));
+		_ASSERT(hr == S_OK);
 	}
 
 	while (CheckMsg() == true)
@@ -640,6 +681,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
+		Release(pipe);
+		Release(root);
 		Release(top.instance);
 		Release(top.result);
 		Release(top.scratch);

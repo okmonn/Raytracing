@@ -108,9 +108,9 @@ struct Association
 	D3D12_STATE_SUBOBJECT sub;
 	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION association;
 
-	Association(LPCWSTR name, const unsigned int& cnt, const D3D12_STATE_SUBOBJECT* subObject) {
+	Association(const WCHAR* name[], const unsigned int& cnt, const D3D12_STATE_SUBOBJECT* subObject) {
 		association.NumExports            = cnt;
-		association.pExports              = &name;
+		association.pExports              = name;
 		association.pSubobjectToAssociate = subObject;
 
 		sub.pDesc = &association;
@@ -128,7 +128,7 @@ struct LocalRoot
 
 	LocalRoot() {
 		sub.pDesc = &rootsignature.root;
-		sub.Type = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
 	}
 	LocalRoot(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_DESC& desc) {
 		CreateRoot(device, rootsignature, desc);
@@ -216,3 +216,8 @@ struct Vector3
 float color[] = {
 	1.0f, 1.0f, 1.0f, 1.0f
 };
+
+static const WCHAR* kRayGenShader = L"rayGen";
+static const WCHAR* kMissShader = L"miss";
+static const WCHAR* kClosestHitShader = L"chs";
+static const WCHAR* kHitGroup = L"HitGroup";

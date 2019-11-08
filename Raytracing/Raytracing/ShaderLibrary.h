@@ -18,6 +18,7 @@ class ShaderLibrary
 		std::vector<std::wstring>funcName;
 		//ŠÖ”î•ñ
 		std::vector<D3D12_EXPORT_DESC>desc;
+		IDxcBlob* blob;
 
 		Library() {
 			library = {};
