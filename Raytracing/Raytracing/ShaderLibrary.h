@@ -1,54 +1,33 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <d3d12.h>
+#include "Header.h"
+#include <dxcapi.h>
 #include <unordered_map>
-
-struct IDxcBlob;
 
 class ShaderLibrary
 {
-	struct Library
-	{
-		//ライブラリデスク
-		D3D12_DXIL_LIBRARY_DESC library;
-		//ステータスオブジェクト
-		D3D12_STATE_SUBOBJECT state;
-		//関数名
-		std::vector<std::wstring>funcName;
-		//関数情報
-		std::vector<D3D12_EXPORT_DESC>desc;
-		IDxcBlob* blob;
-
-		Library() {
-			library = {};
-			state   = {};
-		}
-	};
-
 public:
+	// コンパイル
+	void Compile(const std::wstring& fileName, const std::wstring& entry, const std::initializer_list<std::wstring>& func, const std::wstring& ver);
+
+	// シェーダ情報取得
+	ShaderInfo GetInfo(const std::wstring& fileName);
+
 	// インスタンス変数取得
 	static ShaderLibrary& Get(void);
 
-	// シェーダコンパイル
-	void Compile(const std::wstring& fileName, const std::initializer_list<std::wstring>& entry, const std::wstring& ver);
-
-	// ステータスオブジェクト取得
-	D3D12_STATE_SUBOBJECT GetSubObject(const std::wstring& fileName);
-
-	// シェーダバイトコード取得
-	D3D12_SHADER_BYTECODE GetByteCode(const std::wstring& fileName);
-
 private:
+	ShaderLibrary(const ShaderLibrary&) = delete;
+	void operator=(const ShaderLibrary&) = delete;
+
 	// コンストラクタ
 	ShaderLibrary();
 	// デストラク
 	~ShaderLibrary();
 
-	// シェーダコンパイル
-	void Compile(const std::wstring& fileName, const std::wstring& ver, IDxcBlob** blob);
+	// コンパイル
+	void Compile(const std::wstring& fileName, const std::wstring& entry, const std::wstring& ver, IDxcBlob** blob);
 
-
+	
 	// シェーダ情報
-	std::unordered_map<std::wstring, Library>hlsl;
+	std::unordered_map<std::wstring, ShaderInfo>info;
 };

@@ -1,7 +1,8 @@
 #pragma once
-#include "ShaderLibrary.h"
 #include <wrl.h>
 #include <array>
+#include <vector>
+#include <d3d12.h>
 #include <dxgi1_6.h>
 
 // メモリ開放
@@ -67,35 +68,51 @@ struct Acceleration
 	}
 };
 
-// ルートシグネチャ
-struct RootSignature
+// シェーダ情報
+struct ShaderInfo
 {
-	ID3D12RootSignature* root;
-	std::vector<D3D12_DESCRIPTOR_RANGE>range;
-	std::vector<D3D12_ROOT_PARAMETER>param;
+	D3D12_DXIL_LIBRARY_DESC desc;
+	D3D12_STATE_SUBOBJECT sub;
+	ID3DBlob* blob;
+	std::vector<D3D12_EXPORT_DESC>expo;
+	std::vector<std::wstring>name;
 
-	RootSignature() {
-		root = nullptr;
-		range = {};
-		param = {};
+	ShaderInfo() : blob(nullptr) {
+		desc = {};
+		sub  = {};
+	}
+	~ShaderInfo() {
+		//Release(blob);
 	}
 };
 
-// 当たり情報
+// ルートシグネチャ情報
+struct RootDesc
+{
+	D3D12_ROOT_SIGNATURE_DESC desc;
+	std::vector<D3D12_DESCRIPTOR_RANGE>range;
+	std::vector<D3D12_ROOT_PARAMETER>param;
+
+	RootDesc(const size_t& rangeNum, const size_t& paramNum) {
+		desc = {};
+		range.resize(rangeNum);
+		param.resize(paramNum);
+	}
+};
+
+// 
 struct Hit
 {
 	std::wstring name;
 	D3D12_HIT_GROUP_DESC desc;
 	D3D12_STATE_SUBOBJECT sub;
 
-	Hit(LPCWSTR anyHit, LPCWSTR closestHit, const std::wstring& name)
-		: name(name)
-	{
-		desc.AnyHitShaderImport       = anyHit;
-		desc.ClosestHitShaderImport   = closestHit;
-		desc.HitGroupExport           = name.c_str();
-		desc.IntersectionShaderImport = nullptr;
-		desc.Type                     = D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES;
+	Hit(LPCWSTR anyHit, LPCWSTR ClosestHit, const std::wstring& name) :
+		name(name) {
+		desc = {};
+		desc.AnyHitShaderImport     = anyHit;
+		desc.ClosestHitShaderImport = ClosestHit;
+		desc.HitGroupExport         = this->name.c_str();
 
 		sub.pDesc = &desc;
 		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
@@ -105,69 +122,41 @@ struct Hit
 // 
 struct Association
 {
+	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION asso;
 	D3D12_STATE_SUBOBJECT sub;
-	D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION association;
 
-	Association(const WCHAR* name[], const unsigned int& cnt, const D3D12_STATE_SUBOBJECT* subObject) {
-		association.NumExports            = cnt;
-		association.pExports              = name;
-		association.pSubobjectToAssociate = subObject;
+	Association(const wchar_t* name[], const size_t& num, D3D12_STATE_SUBOBJECT* sub) {
+		asso.NumExports            = num;
+		asso.pExports              = name;
+		asso.pSubobjectToAssociate = sub;
 
-		sub.pDesc = &association;
-		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+		this->sub.pDesc = &asso;
+		this->sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
 	}
 };
 
-void CreateRoot(ID3D12Device5* device, RootSignature& rootsignature, const D3D12_ROOT_SIGNATURE_DESC& desc);
-
-// ローカルルートシグネチャ
-struct LocalRoot
+// ルートシグネチャ
+struct Root
 {
-	RootSignature rootsignature;
+	ID3D12RootSignature* root;
 	D3D12_STATE_SUBOBJECT sub;
 
-	LocalRoot() {
-		sub.pDesc = &rootsignature.root;
-		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+	Root() {
+		root = nullptr;
+		sub = {};
 	}
-	LocalRoot(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_DESC& desc) {
-		CreateRoot(device, rootsignature, desc);
-
-		sub.pDesc = &rootsignature.root;
-		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
-	}
-	~LocalRoot() {
-		Release(rootsignature.root);
+	~Root() {
+		Release(root);
 	}
 };
 
-// グローバルルートシグネチャ
-struct GlobalRoot
-{
-	RootSignature rootsignature;
-	D3D12_STATE_SUBOBJECT sub;
-
-	GlobalRoot() {
-		sub.Type = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-	}
-	GlobalRoot(ID3D12Device5* device, const D3D12_ROOT_SIGNATURE_DESC& desc) {
-		CreateRoot(device, rootsignature, desc);
-
-		sub.pDesc = &rootsignature.root;
-		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-	}
-	~GlobalRoot() {
-		Release(rootsignature.root);
-	}
-};
-
-// シェーダ構成
+// 
 struct ShaderConfig
 {
 	D3D12_RAYTRACING_SHADER_CONFIG config;
 	D3D12_STATE_SUBOBJECT sub;
 
-	ShaderConfig(const unsigned int& attributeSize, const unsigned int& payloadSize) {
+	ShaderConfig(const size_t& attributeSize, const size_t& payloadSize) {
 		config.MaxAttributeSizeInBytes = attributeSize;
 		config.MaxPayloadSizeInBytes   = payloadSize;
 
@@ -176,14 +165,14 @@ struct ShaderConfig
 	}
 };
 
-// パイプライン構成
+// 
 struct PipeConfig
 {
 	D3D12_RAYTRACING_PIPELINE_CONFIG config;
 	D3D12_STATE_SUBOBJECT sub;
 
-	PipeConfig(const unsigned int& traceDepth) {
-		config.MaxTraceRecursionDepth = traceDepth;
+	PipeConfig(const size_t& depth) {
+		config.MaxTraceRecursionDepth = depth;
 
 		sub.pDesc = &config;
 		sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
@@ -210,11 +199,6 @@ struct Vector3
 		y = vec.y;
 		z = vec.z;
 	}
-};
-
-// クリアカラー
-float color[] = {
-	1.0f, 1.0f, 1.0f, 1.0f
 };
 
 static const WCHAR* kRayGenShader = L"rayGen";

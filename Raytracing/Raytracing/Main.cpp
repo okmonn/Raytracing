@@ -1,7 +1,12 @@
-#include "Header.h"
+#include "ShaderLibrary.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+
+// クリアカラー
+float color[] = {
+	1.0f, 1.0f, 1.0f, 1.0f
+};
 
 // ウィンドウコールバック
 #ifdef _WIN64
@@ -339,6 +344,64 @@ void BuildAcceleration(ID3D12GraphicsCommandList5* list, const Acceleration& acc
 	Barrier(list, acceleration.result);
 }
 
+// レイジェネレーションルートシグネチャ情報取得
+RootDesc GetRayGenDesc()
+{
+	RootDesc root(2, 1);
+	//output
+	root.range[0].BaseShaderRegister                = 0;
+	root.range[0].NumDescriptors                    = 1;
+	root.range[0].OffsetInDescriptorsFromTableStart = 0;
+	root.range[0].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+	root.range[0].RegisterSpace                     = 0;
+
+	//scene
+	root.range[1].BaseShaderRegister                = 0;
+	root.range[1].NumDescriptors                    = 1;
+	root.range[1].OffsetInDescriptorsFromTableStart = 1;
+	root.range[1].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	root.range[1].RegisterSpace                     = 0;
+	
+	root.param[0].DescriptorTable.NumDescriptorRanges = root.range.size();
+	root.param[0].DescriptorTable.pDescriptorRanges   = root.range.data();
+	root.param[0].ParameterType                       = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	root.desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	root.desc.NumParameters = root.param.size();
+	root.desc.pParameters   = root.param.data();
+
+	return root;
+}
+
+// ルートシグネチャ生成
+void CreateRoot(ID3D12Device5* device, ID3D12RootSignature** root, const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+	Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
+	auto hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &sig, nullptr);
+	_ASSERT(hr == S_OK);
+
+	hr = device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&(*root)));
+	_ASSERT(hr == S_OK);
+}
+
+// ローカルルートシグネチャ生成
+void CreateLocalRoot(ID3D12Device5* device, Root& local, const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+	CreateRoot(device, &local.root, desc);
+
+	local.sub.pDesc = &local.root;
+	local.sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+}
+
+// グローバルルートシグネチャ生成
+void CreateGlobalRoot(ID3D12Device5* device, Root& global, const D3D12_ROOT_SIGNATURE_DESC& desc)
+{
+	CreateRoot(device, &global.root, desc);
+
+	global.sub.pDesc = &global.root;
+	global.sub.Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+}
+
 // コマンド初期化
 void InitCommand(ID3D12CommandAllocator* allocator, ID3D12GraphicsCommandList5* list, ID3D12PipelineState* pipe = nullptr)
 {
@@ -368,47 +431,6 @@ void Execution(ID3D12CommandQueue* queue, IDXGISwapChain4* swap, ID3D12GraphicsC
 
 		WaitForSingleObject(fence.event, INFINITE);
 	}
-}
-
-// ルートシグネチャ生成
-void CreateRoot(ID3D12Device5* device, RootSignature& rootsignature, const D3D12_ROOT_SIGNATURE_DESC& desc)
-{
-	Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
-	auto hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &sig, nullptr);
-	_ASSERT(hr == S_OK);
-
-	hr = device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&rootsignature.root));
-	_ASSERT(hr == S_OK);
-}
-
-// レイジェネレーション用ルートシグネチャ生成
-void CreateRayGenRoot(ID3D12Device5* device, RootSignature& rootsignature)
-{
-	rootsignature.range.resize(2);
-	//output
-	rootsignature.range[0].BaseShaderRegister                = 0;
-	rootsignature.range[0].NumDescriptors                    = 1;
-	rootsignature.range[0].OffsetInDescriptorsFromTableStart = 0;
-	rootsignature.range[0].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	rootsignature.range[0].RegisterSpace                     = 0;
-	//scene
-	rootsignature.range[1].BaseShaderRegister                = 0;
-	rootsignature.range[1].NumDescriptors                    = 1;
-	rootsignature.range[1].OffsetInDescriptorsFromTableStart = 0;
-	rootsignature.range[1].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	rootsignature.range[1].RegisterSpace                     = 0;
-
-	rootsignature.param.resize(1);
-	rootsignature.param[0].DescriptorTable.NumDescriptorRanges = unsigned int(rootsignature.range.size());
-	rootsignature.param[0].DescriptorTable.pDescriptorRanges   = rootsignature.range.data();
-	rootsignature.param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-
-	D3D12_ROOT_SIGNATURE_DESC desc{};
-	desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-	desc.NumParameters = unsigned int(rootsignature.param.size());
-	desc.pParameters   = rootsignature.param.data();
-
-	CreateRoot(device, rootsignature, desc);
 }
 
 // エントリーポイント
@@ -606,64 +628,60 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Execution(queue, swap, list, fence);
 	}
 
-	//シェーダコンパイル
-	ShaderLibrary::Get().Compile(L"sample.hlsl", { kRayGenShader, kMissShader, kClosestHitShader }, L"lib_6_3");
+	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kClosestHitShader }, L"lib_6_3");
 
 	std::array<D3D12_STATE_SUBOBJECT, 10>sub;
-	ID3D12RootSignature* root = nullptr;
-	ID3D12PipelineState* pipe = nullptr;
+	unsigned int index = 0;
+	Root global;
+	CreateGlobalRoot(device, global, {});
+	ID3D12StateObject* pipe = nullptr;
 	{
-		unsigned int index = 0;
-		sub[index++] = ShaderLibrary::Get().GetSubObject(L"sample.hlsl");
+		sub[index++] = global.sub;
+
+		sub[index++] = ShaderLibrary::Get().GetInfo(L"sample.hlsl").sub;
 
 		Hit hit(nullptr, kClosestHitShader, kHitGroup);
 		sub[index++] = hit.sub;
 
-		LocalRoot raygen;
-		CreateRayGenRoot(device, raygen.rootsignature);
-		sub[index] = raygen.sub;
-
+		Root rayGen;
+		CreateLocalRoot(device, rayGen, GetRayGenDesc().desc);
+		sub[index] = rayGen.sub;
 		unsigned int rootIndex = index++;
-		Association association1(&kRayGenShader, 1, &sub[rootIndex]);
-		sub[index++] = association1.sub;
+		Association rayGenAsso(&kRayGenShader, 1, &sub[rootIndex]);
+		sub[index++] = rayGenAsso.sub;
 
-		D3D12_ROOT_SIGNATURE_DESC rootDesc{};
-		rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-		LocalRoot hitMiss(device, rootDesc);
-		sub[index] = hitMiss.sub;
-
+		D3D12_ROOT_SIGNATURE_DESC empty{};
+		empty.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+		Root miss;
+		CreateLocalRoot(device, miss, empty);
+		sub[index] = miss.sub;
 		rootIndex = index++;
-		const WCHAR* missHitName[] = {
-			kMissShader, 
+		const wchar_t* missName[] = {
+			kMissShader,
 			kClosestHitShader
 		};
-		Association association2(missHitName, _countof(missHitName), &sub[rootIndex]);
-		sub[index++] = association2.sub;
+		Association missAsso(missName, _countof(missName), &sub[rootIndex]);
+		sub[index++] = missAsso.sub;
 
-		ShaderConfig sCon(sizeof(float) * 2, sizeof(float) * 1);
-		sub[index] = sCon.sub;
-
-		rootIndex = index++;
-		const WCHAR* shader[] = {
-			 kMissShader, 
-			 kClosestHitShader,
-			 kRayGenShader
+		ShaderConfig sConfig(sizeof(float) * 2, sizeof(float) * 1);
+		sub[index] = sConfig.sub;
+		unsigned int sIndex = index++;
+		const wchar_t* shaderExpo[] = {
+			kMissShader,
+			kClosestHitShader,
+			kRayGenShader
 		};
-		Association association3(shader, _countof(shader), &sub[rootIndex]);
-		sub[index++] = association3.sub;
+		Association sAsso(shaderExpo, _countof(shaderExpo), &sub[sIndex]);
+		sub[index++] = sAsso.sub;
 
-		PipeConfig pCon(0);
-		sub[index++] = pCon.sub;
-
-		GlobalRoot global(device, {});
-		global.rootsignature.root->QueryInterface(&root);
-		sub[index++] = global.sub;
+		PipeConfig pConfig(0);
+		sub[index++] = pConfig.sub;
 
 		D3D12_STATE_OBJECT_DESC desc{};
-		desc.NumSubobjects = index;
+		desc.NumSubobjects = sub.size();
 		desc.pSubobjects   = sub.data();
 		desc.Type          = D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
-		hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));
+		auto hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));
 		_ASSERT(hr == S_OK);
 	}
 
@@ -682,7 +700,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//終了
 	{
 		Release(pipe);
-		Release(root);
+		Release(global.root);
 		Release(top.instance);
 		Release(top.result);
 		Release(top.scratch);
