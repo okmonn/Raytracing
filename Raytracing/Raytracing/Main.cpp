@@ -685,6 +685,93 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		_ASSERT(hr == S_OK);
 	}
 
+	ID3D12Resource* shaderTbl  = nullptr;
+	unsigned int shaderTblSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	{
+		shaderTblSize += 8;
+		shaderTblSize  = ((shaderTblSize + (D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT - 1)) / D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+	
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = shaderTblSize * 3;
+
+		CreateRsc(device, &shaderTbl, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+
+		unsigned int* data = nullptr;
+		hr = shaderTbl->Map(0, nullptr, (void**)&data);
+		_ASSERT(hr == S_OK);
+
+		Microsoft::WRL::ComPtr<ID3D12StateObjectProperties>rootProp = nullptr;
+		hr = pipe->QueryInterface(IID_PPV_ARGS(&rootProp));
+		_ASSERT(hr == S_OK);
+
+		//レイジェネレーション用
+		memcpy(data, rootProp->GetShaderIdentifier(kRayGenShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		//ミスヒット用
+		memcpy(data + shaderTblSize, rootProp->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		//ヒット用
+		memcpy(data + (shaderTblSize * 2), rootProp->GetShaderIdentifier(kHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+
+		shaderTbl->Unmap(0, nullptr);
+	}
+
+	ID3D12DescriptorHeap* outputHeap = nullptr;
+	ID3D12Resource* outputRsc = nullptr;
+	{
+		DXGI_SWAP_CHAIN_DESC1 swapDesc{};
+		hr = swap->GetDesc1(&swapDesc);
+		_ASSERT(hr == S_OK);
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Height           = swapDesc.Height;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = swapDesc.Width;
+		
+		CreateRsc(device, &outputRsc, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+		CreateHeap(device, &outputHeap, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
+		uav.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
+		device->CreateUnorderedAccessView(outputRsc, nullptr, &uav, outputHeap->GetCPUDescriptorHandleForHeapStart());
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+		srv.RaytracingAccelerationStructure.Location = top.result->GetGPUVirtualAddress();
+		srv.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv.ViewDimension                            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+		auto handle = outputHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += device->GetDescriptorHandleIncrementSize(outputHeap->GetDesc().Type);
+		device->CreateShaderResourceView(nullptr, &srv, handle);
+	}
+
 	while (CheckMsg() == true)
 	{
 		unsigned int index = swap->GetCurrentBackBufferIndex();
@@ -699,6 +786,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
+		Release(outputRsc);
+		Release(outputHeap);
+		Release(shaderTbl);
 		Release(pipe);
 		Release(global.root);
 		Release(top.instance);
