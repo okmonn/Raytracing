@@ -273,7 +273,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	ptr->Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 	ptr->InstanceContributionToHitGroupIndex = 0;
 	ptr->InstanceID                          = 0;
-	ptr->InstanceMask                        = 1;
+	ptr->InstanceMask                        = 0xff;
 	float mat[3][4] = {
 		{ 1.0f, 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f, 0.0f },
@@ -294,7 +294,7 @@ void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12
 	acceleration.geoDesc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 
 	acceleration.input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 	acceleration.input.NumDescs       = 1;
 	acceleration.input.pGeometryDescs = &acceleration.geoDesc;
 	acceleration.input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
@@ -576,9 +576,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ID3D12Resource* box = nullptr;
 	{
 		const Vector3 vertex[] = {
-			Vector3(-1.0f,  1.0f, 0.0f),
-			Vector3( 1.0f,  1.0f, 0.0f),
-			Vector3(-1.0f, -1.0f, 0.0f),
+			Vector3(0,          1,  0),
+			Vector3(0.866f,  -0.5f, 0),
+			Vector3(-0.866f, -0.5f, 0),
 			//Vector3( 1.0f, -1.0f, 0.0f)
 		};
 
@@ -636,8 +636,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CreateGlobalRoot(device, global, {});
 	ID3D12StateObject* pipe = nullptr;
 	{
-		sub[index++] = global.sub;
-
 		sub[index++] = ShaderLibrary::Get().GetInfo(L"sample.hlsl").sub;
 
 		Hit hit(nullptr, kClosestHitShader, kHitGroup);
@@ -663,7 +661,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Association missAsso(missName, _countof(missName), &sub[rootIndex]);
 		sub[index++] = missAsso.sub;
 
-		ShaderConfig sConfig(sizeof(float) * 2, sizeof(float) * 1);
+		ShaderConfig sConfig(sizeof(float) * 2, sizeof(float) * 3);
 		sub[index] = sConfig.sub;
 		unsigned int sIndex = index++;
 		const wchar_t* shaderExpo[] = {
@@ -674,8 +672,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Association sAsso(shaderExpo, _countof(shaderExpo), &sub[sIndex]);
 		sub[index++] = sAsso.sub;
 
-		PipeConfig pConfig(0);
+		PipeConfig pConfig(1);
 		sub[index++] = pConfig.sub;
+
+		sub[index++] = global.sub;
 
 		D3D12_STATE_OBJECT_DESC desc{};
 		desc.NumSubobjects = sub.size();
@@ -683,6 +683,48 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Type          = D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
 		auto hr = device->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));
 		_ASSERT(hr == S_OK);
+	}
+
+	ID3D12DescriptorHeap* outputHeap = nullptr;
+	ID3D12Resource* outputRsc = nullptr;
+	{
+		DXGI_SWAP_CHAIN_DESC1 swapDesc{};
+		hr = swap->GetDesc1(&swapDesc);
+		_ASSERT(hr == S_OK);
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Height           = swapDesc.Height;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = swapDesc.Width;
+
+		CreateRsc(device, &outputRsc, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+		CreateHeap(device, &outputHeap, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
+		uav.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
+		device->CreateUnorderedAccessView(outputRsc, nullptr, &uav, outputHeap->GetCPUDescriptorHandleForHeapStart());
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+		srv.RaytracingAccelerationStructure.Location = top.result->GetGPUVirtualAddress();
+		srv.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv.ViewDimension                            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+		auto handle = outputHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += device->GetDescriptorHandleIncrementSize(outputHeap->GetDesc().Type);
+		device->CreateShaderResourceView(nullptr, &srv, handle);
 	}
 
 	ID3D12Resource* shaderTbl  = nullptr;
@@ -722,6 +764,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		//レイジェネレーション用
 		memcpy(data, rootProp->GetShaderIdentifier(kRayGenShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		unsigned __int64 start = outputHeap->GetGPUDescriptorHandleForHeapStart().ptr;
+		*(unsigned __int64*)(data + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = start;
 		//ミスヒット用
 		memcpy(data + shaderTblSize, rootProp->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		//ヒット用
@@ -730,57 +774,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		shaderTbl->Unmap(0, nullptr);
 	}
 
-	ID3D12DescriptorHeap* outputHeap = nullptr;
-	ID3D12Resource* outputRsc = nullptr;
-	{
-		DXGI_SWAP_CHAIN_DESC1 swapDesc{};
-		hr = swap->GetDesc1(&swapDesc);
-		_ASSERT(hr == S_OK);
-
-		D3D12_HEAP_PROPERTIES prop{};
-		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		prop.CreationNodeMask     = 0;
-		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
-		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
-		prop.VisibleNodeMask      = 0;
-
-		D3D12_RESOURCE_DESC desc{};
-		desc.DepthOrArraySize = 1;
-		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
-		desc.Height           = swapDesc.Height;
-		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		desc.MipLevels        = 1;
-		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = swapDesc.Width;
-		
-		CreateRsc(device, &outputRsc, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
-
-		CreateHeap(device, &outputHeap, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-	
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
-		uav.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
-		device->CreateUnorderedAccessView(outputRsc, nullptr, &uav, outputHeap->GetCPUDescriptorHandleForHeapStart());
-
-		D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
-		srv.RaytracingAccelerationStructure.Location = top.result->GetGPUVirtualAddress();
-		srv.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srv.ViewDimension                            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-		auto handle = outputHeap->GetCPUDescriptorHandleForHeapStart();
-		handle.ptr += device->GetDescriptorHandleIncrementSize(outputHeap->GetDesc().Type);
-		device->CreateShaderResourceView(nullptr, &srv, handle);
-	}
-
 	while (CheckMsg() == true)
 	{
 		unsigned int index = swap->GetCurrentBackBufferIndex();
 		InitCommand(allocator[index], list);
 
-		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
+		list->SetComputeRootSignature(global.root);
+		list->SetPipelineState1(pipe);
+
+		Barrier(list, outputRsc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		DXGI_SWAP_CHAIN_DESC1 swapDesc{};
+		hr = swap->GetDesc1(&swapDesc);
+		_ASSERT(hr == S_OK);
+		D3D12_DISPATCH_RAYS_DESC desc{};
+		desc.Depth  = 1;
+		desc.Height = swapDesc.Height;
+		desc.Width  = swapDesc.Width;
+		//レイジェネレーション用
+		desc.RayGenerationShaderRecord.SizeInBytes  = shaderTblSize;
+		desc.RayGenerationShaderRecord.StartAddress = shaderTbl->GetGPUVirtualAddress();
+		//ミスヒット用
+		desc.MissShaderTable.SizeInBytes   = shaderTblSize;
+		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + shaderTblSize;
+		desc.MissShaderTable.StrideInBytes = shaderTblSize;
+		//ヒット用
+		desc.HitGroupTable.SizeInBytes   = shaderTblSize;
+		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * 2);
+		desc.HitGroupTable.StrideInBytes = shaderTblSize;
+
+		list->SetDescriptorHeaps(1, &outputHeap);
+		list->DispatchRays(&desc);
+		Barrier(list, outputRsc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
+		
+		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+		list->CopyResource(render.rsc[index], outputRsc);
+		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
+
+		/*Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 		ClearRenderTarget(device, list, render, index, color);
 		Barrier(list, render.rsc[index], D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
-
+		*/
 		Execution(queue, swap, list, fence);
 	}
 
