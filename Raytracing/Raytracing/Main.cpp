@@ -575,7 +575,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//}Œ`
 	ID3D12Resource* box = nullptr;
 	{
-		const Vector3 vertex[] = {
+		const Vector3 vertex[3] = {
 			Vector3(0,          1,  0),
 			Vector3(0.866f,  -0.5f, 0),
 			Vector3(-0.866f, -0.5f, 0),
@@ -754,7 +754,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		CreateRsc(device, &shaderTbl, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 
-		unsigned int* data = nullptr;
+		char* data = nullptr;
 		hr = shaderTbl->Map(0, nullptr, (void**)&data);
 		_ASSERT(hr == S_OK);
 
