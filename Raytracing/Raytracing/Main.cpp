@@ -206,7 +206,7 @@ void ClearRenderTarget(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, 
 }
 
 // トップレベル加速構造の生成
-void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acceleration& bottom)
+void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acceleration& bottom, const size_t& instanceNum = 1)
 {
 	{
 		D3D12_HEAP_PROPERTIES prop{};
@@ -226,14 +226,14 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceNum;
 
 		CreateRsc(device, &acceleration.instance, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 	}
 
 	acceleration.input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
 	acceleration.input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	acceleration.input.NumDescs      = 1;
+	acceleration.input.NumDescs      = instanceNum;
 	acceleration.input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	acceleration.input.InstanceDescs = acceleration.instance->GetGPUVirtualAddress();
 
@@ -269,17 +269,26 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	D3D12_RAYTRACING_INSTANCE_DESC* ptr = nullptr;
 	auto hr = acceleration.instance->Map(0, nullptr, (void**)&ptr);
 	_ASSERT(hr == S_OK);
-	ptr->AccelerationStructure               = bottom.result->GetGPUVirtualAddress();
-	ptr->Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-	ptr->InstanceContributionToHitGroupIndex = 0;
-	ptr->InstanceID                          = 0;
-	ptr->InstanceMask                        = 0xff;
 	float mat[3][4] = {
 		{ 1.0f, 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f, 0.0f },
-		{ 0.0f, 0.0f, 1.0f, 0.0f }
+		{ 0.0f, 0.0f, 1.0f, 0.0f },
 	};
-	memcpy(ptr->Transform, &mat, sizeof(mat));
+	float tmp[] = {
+		-2.0f,
+		0.0f,
+		2.0f
+	};
+	for (size_t i = 0; i < instanceNum; ++i)
+	{
+		ptr[i].AccelerationStructure               = bottom.result->GetGPUVirtualAddress();
+		ptr[i].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		ptr[i].InstanceContributionToHitGroupIndex = 0;
+		ptr[i].InstanceID                          = i;
+		ptr[i].InstanceMask                        = 0xff;
+		mat[0][3] = tmp[i];
+		memcpy(ptr[i].Transform, &mat, sizeof(mat));
+	}
 	acceleration.instance->Unmap(0, nullptr);
 }
 
@@ -344,7 +353,7 @@ void BuildAcceleration(ID3D12GraphicsCommandList5* list, const Acceleration& acc
 	Barrier(list, acceleration.result);
 }
 
-// レイジェネレーションルートシグネチャ情報取得
+// レイジェネレーション用ルートシグネチャ情報取得
 RootDesc GetRayGenDesc()
 {
 	RootDesc root(2, 1);
@@ -365,6 +374,21 @@ RootDesc GetRayGenDesc()
 	root.param[0].DescriptorTable.NumDescriptorRanges = root.range.size();
 	root.param[0].DescriptorTable.pDescriptorRanges   = root.range.data();
 	root.param[0].ParameterType                       = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	root.desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	root.desc.NumParameters = root.param.size();
+	root.desc.pParameters   = root.param.data();
+
+	return root;
+}
+
+// クローズドヒット用ルートシグネチャ情報取得
+RootDesc GetCloseHitDesc()
+{
+	RootDesc root(0, 1);
+	root.param[0].Descriptor.RegisterSpace  = 0;
+	root.param[0].Descriptor.ShaderRegister = 0;
+	root.param[0].ParameterType             = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_CBV;
 
 	root.desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 	root.desc.NumParameters = root.param.size();
@@ -622,7 +646,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//トップレベル加速構造
 	Acceleration top;
 	{
-		CreateTopLevel(device, top, bottom);
+		CreateTopLevel(device, top, bottom, 3);
 		InitCommand(allocator[0], list);
 		BuildAcceleration(list, top);
 		Execution(queue, swap, list, fence);
@@ -630,7 +654,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kClosestHitShader }, L"lib_6_3");
 
-	std::array<D3D12_STATE_SUBOBJECT, 10>sub;
+	//ルートシグネチャ・パイプライン生成
+	std::array<D3D12_STATE_SUBOBJECT, 12>sub;
 	unsigned int index = 0;
 	Root global;
 	CreateGlobalRoot(device, global, {});
@@ -648,17 +673,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Association rayGenAsso(&kRayGenShader, 1, &sub[rootIndex]);
 		sub[index++] = rayGenAsso.sub;
 
+		Root closeHit;
+		CreateLocalRoot(device, closeHit, GetCloseHitDesc().desc);
+		sub[index] = closeHit.sub;
+		rootIndex = index++;
+		Association closeHitAsso(&kClosestHitShader, 1, &sub[rootIndex]);
+		sub[index++] = closeHitAsso.sub;
+
 		D3D12_ROOT_SIGNATURE_DESC empty{};
 		empty.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 		Root miss;
 		CreateLocalRoot(device, miss, empty);
 		sub[index] = miss.sub;
 		rootIndex = index++;
-		const wchar_t* missName[] = {
-			kMissShader,
-			kClosestHitShader
-		};
-		Association missAsso(missName, _countof(missName), &sub[rootIndex]);
+		Association missAsso(&kMissShader, 1, &sub[rootIndex]);
 		sub[index++] = missAsso.sub;
 
 		ShaderConfig sConfig(sizeof(float) * 2, sizeof(float) * 3);
@@ -685,6 +713,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		_ASSERT(hr == S_OK);
 	}
 
+	//出力用リソース生成
 	ID3D12DescriptorHeap* outputHeap = nullptr;
 	ID3D12Resource* outputRsc = nullptr;
 	{
@@ -727,6 +756,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		device->CreateShaderResourceView(nullptr, &srv, handle);
 	}
 
+	//定数バッファ生成
+	ID3D12Resource* constant = nullptr;
+	{
+		float tmp[9][4] = {
+			{1.0f, 0.0f, 0.0f, 1.0f},
+			{0.0f, 1.0f, 0.0f, 1.0f},
+			{0.0f, 0.0f, 1.0f, 1.0f},
+
+			{1.0f, 1.0f, 0.0f, 1.0f},
+			{0.0f, 1.0f, 1.0f, 1.0f},
+			{1.0f, 0.0f, 1.0f, 1.0f},
+
+			{1.0f, 0.0f, 1.0f, 1.0f},
+			{1.0f, 1.0f, 0.0f, 1.0f},
+			{0.0f, 1.0f, 1.0f, 1.0f},
+		};
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = sizeof(tmp);
+
+		CreateRsc(device, &constant, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+
+		void* data = nullptr;
+		hr = constant->Map(0, nullptr, &data);
+		_ASSERT(hr == S_OK);
+		memcpy(data, tmp, sizeof(tmp));
+		constant->Unmap(0, nullptr);
+	}
+
+	//シェーダテーブル設定
 	ID3D12Resource* shaderTbl  = nullptr;
 	unsigned int shaderTblSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 	{
@@ -766,10 +841,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		memcpy(data, rootProp->GetShaderIdentifier(kRayGenShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		unsigned __int64 start = outputHeap->GetGPUDescriptorHandleForHeapStart().ptr;
 		*(unsigned __int64*)(data + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = start;
-		//ミスヒット用
+		//ミス用
 		memcpy(data + shaderTblSize, rootProp->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		//ヒット用
 		memcpy(data + (shaderTblSize * 2), rootProp->GetShaderIdentifier(kHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		//定数バッファ
+		data = data + (shaderTblSize * 2) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+		_ASSERT((unsigned long long)data % 8 == 0);
+		*(D3D12_GPU_VIRTUAL_ADDRESS*)data = constant->GetGPUVirtualAddress();
 
 		shaderTbl->Unmap(0, nullptr);
 	}
@@ -819,6 +898,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
+		Release(constant);
 		Release(outputRsc);
 		Release(outputHeap);
 		Release(shaderTbl);
