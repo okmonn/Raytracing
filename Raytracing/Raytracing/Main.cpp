@@ -275,8 +275,8 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 		{ 0.0f, 0.0f, 1.0f, 0.0f },
 	};
 	float tmp[] = {
-		-2.0f,
 		0.0f,
+		-2.0f,
 		2.0f
 	};
 	for (size_t i = 0; i < instanceNum; ++i)
