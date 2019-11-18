@@ -16,6 +16,9 @@
 // バックバッファーカウント
 #define BACK_BUFFER 3
 
+// インスタンス数
+#define INSTANCE 3
+
 // 機能レベル一覧
 const D3D_FEATURE_LEVEL levels[] = {
 	D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1,
@@ -198,6 +201,30 @@ struct Vector3
 		x = vec.x;
 		y = vec.y;
 		z = vec.z;
+	}
+};
+
+// 4次元
+struct Vector4
+{
+	float x;
+	float y;
+	float z;
+	float w;
+
+	Vector4() {
+		x = y = z = w = 0.0f;
+	}
+	Vector4(const float& x, const float& y, const float& z, const float& w) :
+		x(x), y(y), z(z), w(w) {}
+	Vector4(const Vector4& vec) {
+		(*this) = vec;
+	}
+	void operator=(const Vector4& vec) {
+		x = vec.x;
+		y = vec.y;
+		z = vec.z;
+		w = vec.w;
 	}
 };
 

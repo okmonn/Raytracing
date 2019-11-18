@@ -283,7 +283,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	{
 		ptr[i].AccelerationStructure               = bottom.result->GetGPUVirtualAddress();
 		ptr[i].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		ptr[i].InstanceContributionToHitGroupIndex = 0;
+		ptr[i].InstanceContributionToHitGroupIndex = i;
 		ptr[i].InstanceID                          = i;
 		ptr[i].InstanceMask                        = 0xff;
 		mat[0][3] = tmp[i];
@@ -646,7 +646,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//トップレベル加速構造
 	Acceleration top;
 	{
-		CreateTopLevel(device, top, bottom, 3);
+		CreateTopLevel(device, top, bottom, INSTANCE);
 		InitCommand(allocator[0], list);
 		BuildAcceleration(list, top);
 		Execution(queue, swap, list, fence);
@@ -757,20 +757,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//定数バッファ生成
-	ID3D12Resource* constant = nullptr;
+	std::array<ID3D12Resource*, INSTANCE>constant;
 	{
-		float tmp[9][4] = {
-			{1.0f, 0.0f, 0.0f, 1.0f},
-			{0.0f, 1.0f, 0.0f, 1.0f},
-			{0.0f, 0.0f, 1.0f, 1.0f},
+		Vector4 tmp[] = {
+			Vector4(1.0f, 0.0f, 0.0f, 1.0f),
+			Vector4(1.0f, 1.0f, 0.0f, 1.0f),
+			Vector4(1.0f, 0.0f, 1.0f, 1.0f),
 
-			{1.0f, 1.0f, 0.0f, 1.0f},
-			{0.0f, 1.0f, 1.0f, 1.0f},
-			{1.0f, 0.0f, 1.0f, 1.0f},
+			Vector4(0.0f, 1.0f, 0.0f, 1.0f),
+			Vector4(0.0f, 1.0f, 1.0f, 1.0f),
+			Vector4(1.0f, 1.0f, 0.0f, 1.0f),
 
-			{1.0f, 0.0f, 1.0f, 1.0f},
-			{1.0f, 1.0f, 0.0f, 1.0f},
-			{0.0f, 1.0f, 1.0f, 1.0f},
+			Vector4(0.0f, 0.0f, 1.0f, 1.0f),
+			Vector4(1.0f, 0.0f, 1.0f, 1.0f),
+			Vector4(0.0f, 1.0f, 1.0f, 1.0f)
 		};
 
 		D3D12_HEAP_PROPERTIES prop{};
@@ -790,15 +790,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = sizeof(tmp);
+		desc.Width            = sizeof(tmp) / INSTANCE;
 
-		CreateRsc(device, &constant, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+		for (size_t i = 0; i < constant.size(); ++i)
+		{
+			CreateRsc(device, &constant[i], prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 
-		void* data = nullptr;
-		hr = constant->Map(0, nullptr, &data);
-		_ASSERT(hr == S_OK);
-		memcpy(data, tmp, sizeof(tmp));
-		constant->Unmap(0, nullptr);
+			void* data = nullptr;
+			hr = constant[i]->Map(0, nullptr, &data);
+			_ASSERT(hr == S_OK);
+			memcpy(data, &tmp[i * 3], desc.Width);
+			constant[i]->Unmap(0, nullptr);
+		}
 	}
 
 	//シェーダテーブル設定
@@ -807,7 +810,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 		shaderTblSize += 8;
 		shaderTblSize  = ((shaderTblSize + (D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT - 1)) / D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
-	
+
 		D3D12_HEAP_PROPERTIES prop{};
 		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 		prop.CreationNodeMask     = 0;
@@ -825,7 +828,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = shaderTblSize * 3;
+		desc.Width            = shaderTblSize * (2 + INSTANCE);
 
 		CreateRsc(device, &shaderTbl, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 
@@ -843,12 +846,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		*(unsigned __int64*)(data + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = start;
 		//ミス用
 		memcpy(data + shaderTblSize, rootProp->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-		//ヒット用
-		memcpy(data + (shaderTblSize * 2), rootProp->GetShaderIdentifier(kHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-		//定数バッファ
-		data = data + (shaderTblSize * 2) + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-		_ASSERT((unsigned long long)data % 8 == 0);
-		*(D3D12_GPU_VIRTUAL_ADDRESS*)data = constant->GetGPUVirtualAddress();
+		//ヒット用＆定数バッファ
+		for (size_t i = 0; i < constant.size(); ++i)
+		{
+			//ヒット用
+			char* entry = data + (shaderTblSize * (i + 2));
+			memcpy(entry, rootProp->GetShaderIdentifier(kHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+			//定数バッファ用
+			entry += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+			_ASSERT((unsigned long long)entry % 8 == 0);
+			*(D3D12_GPU_VIRTUAL_ADDRESS*)entry = constant[i]->GetGPUVirtualAddress();
+		}
 
 		shaderTbl->Unmap(0, nullptr);
 	}
@@ -877,7 +885,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + shaderTblSize;
 		desc.MissShaderTable.StrideInBytes = shaderTblSize;
 		//ヒット用
-		desc.HitGroupTable.SizeInBytes   = shaderTblSize;
+		desc.HitGroupTable.SizeInBytes   = shaderTblSize * INSTANCE;
 		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * 2);
 		desc.HitGroupTable.StrideInBytes = shaderTblSize;
 
@@ -898,7 +906,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//終了
 	{
-		Release(constant);
+		for (auto& i : constant)
+		{
+			Release(i);
+		}
 		Release(outputRsc);
 		Release(outputHeap);
 		Release(shaderTbl);
