@@ -82,8 +82,15 @@ void miss(inout RayPayload payload)
 }
 
 [shader("closesthit")]
-void chs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+void triangleChs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
 {
 	float3 barycentrics = float3(1.0 - attribs.barycentrics.x - attribs.barycentrics.y, attribs.barycentrics.x, attribs.barycentrics.y);
 	payload.color = A * barycentrics.x + B * barycentrics.y + C * barycentrics.z;
 }
+
+[shader("closesthit")]
+void planeChs(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+{
+	payload.color = 0.9f;
+}
+

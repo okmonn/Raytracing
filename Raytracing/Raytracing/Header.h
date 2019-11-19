@@ -61,7 +61,7 @@ struct Acceleration
 	ID3D12Resource* scratch;
 	ID3D12Resource* result;
 	ID3D12Resource* instance;
-	D3D12_RAYTRACING_GEOMETRY_DESC geoDesc;
+	std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>geoDesc;
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input;
 
 	Acceleration() {
@@ -230,5 +230,7 @@ struct Vector4
 
 static const WCHAR* kRayGenShader = L"rayGen";
 static const WCHAR* kMissShader = L"miss";
-static const WCHAR* kClosestHitShader = L"chs";
-static const WCHAR* kHitGroup = L"HitGroup";
+static const WCHAR* kTriangleChs = L"triangleChs";
+static const WCHAR* kPlaneChs = L"planeChs";
+static const WCHAR* kTriangleHitGroup = L"TriangleHitGroup";
+static const WCHAR* kPlaneHitGroup = L"PlaneHitGroup";
