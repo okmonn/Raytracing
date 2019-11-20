@@ -16,8 +16,14 @@
 // バックバッファーカウント
 #define BACK_BUFFER 3
 
-// インスタンス数
-#define INSTANCE 3
+// 床のインスタンス数
+#define PLANE_INSTANCE 1
+
+// 三角形のインスタンス数
+#define TRIANGLE_INSTANCE 3
+
+// プリミティブ数
+#define PRIMITIVE 2
 
 // 機能レベル一覧
 const D3D_FEATURE_LEVEL levels[] = {
@@ -61,7 +67,7 @@ struct Acceleration
 	ID3D12Resource* scratch;
 	ID3D12Resource* result;
 	ID3D12Resource* instance;
-	std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>geoDesc;
+	D3D12_RAYTRACING_GEOMETRY_DESC geoDesc;
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input;
 
 	Acceleration() {

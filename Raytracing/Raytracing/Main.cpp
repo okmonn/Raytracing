@@ -276,6 +276,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	};
 	float tmp[] = {
 		0.0f,
+		0.0f,
 		-2.0f,
 		2.0f
 	};
@@ -302,24 +303,19 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 }
 
 // ボトムレベル加速構造の生成
-void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12Resource** vertex, const size_t& geoNum)
+void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12Resource* vertex)
 {
-	acceleration.geoDesc.resize(geoNum);
-	for (size_t i = 0; i < acceleration.geoDesc.size(); ++i)
-	{
-		acceleration.geoDesc[i].Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-		acceleration.geoDesc[i].Triangles.VertexBuffer.StartAddress  = vertex[i]->GetGPUVirtualAddress();
-		acceleration.geoDesc[i].Triangles.VertexBuffer.StrideInBytes = sizeof(Vector3);
-		acceleration.geoDesc[i].Triangles.VertexCount                = unsigned int(vertex[i]->GetDesc().Width / acceleration.geoDesc[i].Triangles.VertexBuffer.StrideInBytes);
-		acceleration.geoDesc[i].Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-		acceleration.geoDesc[i].Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-
-	}
+	acceleration.geoDesc.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	acceleration.geoDesc.Triangles.VertexBuffer.StartAddress  = vertex->GetGPUVirtualAddress();
+	acceleration.geoDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vector3);
+	acceleration.geoDesc.Triangles.VertexCount                = unsigned int(vertex->GetDesc().Width / acceleration.geoDesc.Triangles.VertexBuffer.StrideInBytes);
+	acceleration.geoDesc.Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+	acceleration.geoDesc.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 	
 	acceleration.input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
 	acceleration.input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	acceleration.input.NumDescs       = acceleration.geoDesc.size();
-	acceleration.input.pGeometryDescs = acceleration.geoDesc.data();
+	acceleration.input.NumDescs       = 1;
+	acceleration.input.pGeometryDescs = &acceleration.geoDesc;
 	acceleration.input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
@@ -471,84 +467,6 @@ void Execution(ID3D12CommandQueue* queue, IDXGISwapChain4* swap, ID3D12GraphicsC
 	}
 }
 
-// 三角形リソースの生成
-void CreateTriangle(ID3D12Device5* device, ID3D12Resource** rsc)
-{
-	const Vector3 vertex[] = {
-			Vector3(0,          1,  0),
-			Vector3(0.866f,  -0.5f, 0),
-			Vector3(-0.866f, -0.5f, 0),
-	};
-
-	D3D12_HEAP_PROPERTIES prop{};
-	prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	prop.CreationNodeMask     = 0;
-	prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
-	prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
-	prop.VisibleNodeMask      = 0;
-
-	D3D12_RESOURCE_DESC desc{};
-	desc.Alignment        = 0;
-	desc.DepthOrArraySize = 1;
-	desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
-	desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
-	desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-	desc.Height           = 1;
-	desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	desc.MipLevels        = 1;
-	desc.SampleDesc       = { 1, 0 };
-	desc.Width            = sizeof(Vector3) * _countof(vertex);
-
-	CreateRsc(device, &(*rsc), prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
-
-	void* ptr = nullptr;
-	auto hr = (*rsc)->Map(0, nullptr, &ptr);
-	_ASSERT(hr == S_OK);
-	memcpy(ptr, vertex, sizeof(vertex));
-	(*rsc)->Unmap(0, nullptr);
-}
-
-// 床の生成
-void CreatePlane(ID3D12Device5* device, ID3D12Resource** rsc)
-{
-	const Vector3 vertex[] = {
-			Vector3(-100.0f, -1.0f, -2.0f),
-			Vector3( 100.0f, -1.0f, 100.0f),
-			Vector3(-100.0f, -1.0f, 100.0f),
-
-			Vector3(-100.0f, -1.0f, -2.0f),
-			Vector3( 100.0f, -1.0f, -2.0f),
-			Vector3 (100.0f, -1.0f, 100.0f)
-	};
-
-	D3D12_HEAP_PROPERTIES prop{};
-	prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	prop.CreationNodeMask     = 0;
-	prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
-	prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
-	prop.VisibleNodeMask      = 0;
-
-	D3D12_RESOURCE_DESC desc{};
-	desc.Alignment        = 0;
-	desc.DepthOrArraySize = 1;
-	desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
-	desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
-	desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-	desc.Height           = 1;
-	desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	desc.MipLevels        = 1;
-	desc.SampleDesc       = { 1, 0 };
-	desc.Width            = sizeof(Vector3) * _countof(vertex);
-
-	CreateRsc(device, &(*rsc), prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
-
-	void* data = nullptr;
-	auto hr = (*rsc)->Map(0, nullptr, &data);
-	_ASSERT(hr == S_OK);
-	memcpy(data, vertex, sizeof(vertex));
-	(*rsc)->Unmap(0, nullptr);
-}
-
 // エントリーポイント
 #ifdef _DEBUG
 int main()
@@ -689,21 +607,92 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//床
-	std::vector<ID3D12Resource*>primitive(2);
+	ID3D12Resource* plane = nullptr;
 	{
-		CreateTriangle(device, &primitive[0]);
-		CreatePlane(device, &primitive[1]);
+		const Vector3 vertex[] = {
+			Vector3(-100.0f, -1.0f, -2.0f),
+			Vector3( 100.0f, -1.0f, 100.0f),
+			Vector3(-100.0f, -1.0f, 100.0f),
+
+			Vector3(-100.0f, -1.0f, -2.0f),
+			Vector3( 100.0f, -1.0f, -2.0f),
+			Vector3( 100.0f, -1.0f, 100.0f)
+		};
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = sizeof(Vector3) * _countof(vertex);
+
+		CreateRsc(device, &plane, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+
+		void* data = nullptr;
+		auto hr = plane->Map(0, nullptr, &data);
+		_ASSERT(hr == S_OK);
+		memcpy(data, vertex, sizeof(vertex));
+		plane->Unmap(0, nullptr);
+	}
+
+	//三角形
+	ID3D12Resource* triangle = nullptr;
+	{
+		const Vector3 vertex[] = {
+			Vector3(0,          1,  0),
+			Vector3(0.866f,  -0.5f, 0),
+			Vector3(-0.866f, -0.5f, 0),
+		};
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width           = sizeof(Vector3) * _countof(vertex);
+
+		CreateRsc(device, &triangle, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
+
+		void* ptr = nullptr;
+		auto hr = triangle->Map(0, nullptr, &ptr);
+		_ASSERT(hr == S_OK);
+		memcpy(ptr, vertex, sizeof(vertex));
+		triangle->Unmap(0, nullptr);
 	}
 
 	//ボトムレベル加速構造
-	std::vector<Acceleration>bottom(primitive.size());
+	std::vector<Acceleration>bottom(PRIMITIVE);
 	{
-		CreateBottomLevel(device, bottom[0], primitive.data(), 2);
+		CreateBottomLevel(device, bottom[0], plane);
 		InitCommand(allocator[0], list);
 		BuildAcceleration(list, bottom[0]);
 		Execution(queue, swap, list, fence);
 
-		CreateBottomLevel(device, bottom[1], primitive.data(), 1);
+		CreateBottomLevel(device, bottom[1], triangle);
 		InitCommand(allocator[0], list);
 		BuildAcceleration(list, bottom[1]);
 		Execution(queue, swap, list, fence);
@@ -712,7 +701,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//トップレベル加速構造
 	Acceleration top;
 	{
-		CreateTopLevel(device, top, bottom.data(), INSTANCE);
+		CreateTopLevel(device, top, bottom.data(), PLANE_INSTANCE + TRIANGLE_INSTANCE);
 		InitCommand(allocator[0], list);
 		BuildAcceleration(list, top);
 		Execution(queue, swap, list, fence);
@@ -831,7 +820,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//定数バッファ生成
-	std::array<ID3D12Resource*, INSTANCE>constant;
+	std::array<ID3D12Resource*, TRIANGLE_INSTANCE>constant;
 	{
 		Vector4 tmp[] = {
 			Vector4(1.0f, 0.0f, 0.0f, 1.0f),
@@ -864,7 +853,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = sizeof(tmp) / INSTANCE;
+		desc.Width            = sizeof(tmp) / constant.size();
 
 		for (size_t i = 0; i < constant.size(); ++i)
 		{
@@ -902,7 +891,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = shaderTblSize * (2 + INSTANCE);
+		desc.Width            = shaderTblSize * (2 + PLANE_INSTANCE + TRIANGLE_INSTANCE);
 
 		CreateRsc(device, &shaderTbl, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 
@@ -954,16 +943,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Depth  = 1;
 		desc.Height = swapDesc.Height;
 		desc.Width  = swapDesc.Width;
+
+		unsigned int No = 0;
 		//レイジェネレーション用
 		desc.RayGenerationShaderRecord.SizeInBytes  = shaderTblSize;
-		desc.RayGenerationShaderRecord.StartAddress = shaderTbl->GetGPUVirtualAddress();
+		desc.RayGenerationShaderRecord.StartAddress = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
 		//ミスヒット用
 		desc.MissShaderTable.SizeInBytes   = shaderTblSize;
-		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + shaderTblSize;
+		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
 		desc.MissShaderTable.StrideInBytes = shaderTblSize;
 		//ヒット用
-		desc.HitGroupTable.SizeInBytes   = shaderTblSize * INSTANCE;
-		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * 2);
+		desc.HitGroupTable.SizeInBytes   = shaderTblSize * (0 + TRIANGLE_INSTANCE);
+		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
 		desc.HitGroupTable.StrideInBytes = shaderTblSize;
 
 		list->SetDescriptorHeaps(1, &outputHeap);
@@ -1001,10 +992,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			Release(i.result);
 			Release(i.scratch);
 		}
-		for (auto& i : primitive)
-		{
-			Release(i);
-		}
+		Release(triangle);
+		Release(plane);
 		for (auto& i : render.rsc)
 		{
 			Release(i);
