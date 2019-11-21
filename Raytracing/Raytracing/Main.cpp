@@ -407,6 +407,27 @@ RootDesc GetTriangleCloseHitDesc()
 	return root;
 }
 
+// 床のクローズドヒット用ルートシグネチャ情報
+RootDesc GetPlaneCloseHitDesc()
+{
+	RootDesc root(1, 1);
+	root.range[0].BaseShaderRegister                = 0;
+	root.range[0].NumDescriptors                    = 1;
+	root.range[0].OffsetInDescriptorsFromTableStart = 0;
+	root.range[0].RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	root.range[0].RegisterSpace                     = 0;
+
+	root.param[0].DescriptorTable.NumDescriptorRanges = root.range.size();
+	root.param[0].DescriptorTable.pDescriptorRanges   = root.range.data();
+	root.param[0].ParameterType                       = D3D12_ROOT_PARAMETER_TYPE::D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+
+	root.desc.Flags         = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	root.desc.NumParameters = root.param.size();
+	root.desc.pParameters   = root.param.data();
+
+	return root;
+}
+
 // ルートシグネチャ生成
 void CreateRoot(ID3D12Device5* device, ID3D12RootSignature** root, const D3D12_ROOT_SIGNATURE_DESC& desc)
 {
@@ -707,7 +728,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Execution(queue, swap, list, fence);
 	}
 
-	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kTriangleChs, kPlaneChs }, L"lib_6_3");
+	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kTriangleChs, kPlaneChs, /*kShadowChs, kshadowMiss*/ }, L"lib_6_3");
 
 	//ルートシグネチャ・パイプライン生成
 	std::array<D3D12_STATE_SUBOBJECT, 13>sub;
@@ -723,6 +744,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Hit planeHit(nullptr, kPlaneChs, kPlaneHitGroup);
 		sub[index++] = planeHit.sub;
+
+		//Hit shadowHit(nullptr, kShadowChs, kShadowHitGroup);
+		//sub[index++] = shadowHit.sub;
 
 		Root rayGen;
 		CreateLocalRoot(device, rayGen, GetRayGenDesc().desc);
