@@ -293,7 +293,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	{
 		ptr[i].AccelerationStructure               = bottom[1].result->GetGPUVirtualAddress();
 		ptr[i].Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-		ptr[i].InstanceContributionToHitGroupIndex = i;
+		ptr[i].InstanceContributionToHitGroupIndex = i * 2;
 		ptr[i].InstanceID                          = i;
 		ptr[i].InstanceMask                        = 0xff;
 		mat[0][3] = tmp[i];
@@ -745,8 +745,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Hit planeHit(nullptr, kPlaneChs, kPlaneHitGroup);
 		sub[index++] = planeHit.sub;
 
-		//Hit shadowHit(nullptr, kShadowChs, kShadowHitGroup);
-		//sub[index++] = shadowHit.sub;
+		Hit shadowHit(nullptr, kShadowChs, kShadowHitGroup);
+		sub[index++] = shadowHit.sub;
 
 		Root rayGen;
 		CreateLocalRoot(device, rayGen, GetRayGenDesc().desc);
@@ -762,6 +762,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Association closeHitAsso(&kTriangleChs, 1, &sub[rootIndex]);
 		sub[index++] = closeHitAsso.sub;
 
+		Root plane;
+		CreateLocalRoot(device, plane, GetPlaneCloseHitDesc().desc);
+		sub[index] = plane.sub;
+		rootIndex = index++;
+		Association planeAsso(&kPlaneChs, 1, &sub[rootIndex]);
+		sub[index++] = planeAsso.sub;
+
 		D3D12_ROOT_SIGNATURE_DESC empty{};
 		empty.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
 		Root miss;
@@ -769,8 +776,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sub[index] = miss.sub;
 		rootIndex = index++;
 		const wchar_t* missExpo[] = {
-			kPlaneChs,
-			kMissShader
+			kMissShader,
+			kShadowChs,
+			kshadowMiss,
 		};
 		Association missAsso(missExpo, _countof(missExpo), &sub[rootIndex]);
 		sub[index++] = missAsso.sub;
@@ -782,12 +790,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			kRayGenShader,
 			kTriangleChs,
 			kPlaneChs,
-			kMissShader
+			kMissShader,
+			kShadowChs,
+			kshadowMiss
 		};
 		Association sAsso(shaderExpo, _countof(shaderExpo), &sub[sIndex]);
 		sub[index++] = sAsso.sub;
 
-		PipeConfig pConfig(1);
+		PipeConfig pConfig(2);
 		sub[index++] = pConfig.sub;
 
 		sub[index++] = global.sub;
@@ -934,8 +944,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		*(unsigned __int64*)(data + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = start;
 		//ミス用
 		memcpy(data + (shaderTblSize * index++), rootProp->GetShaderIdentifier(kMissShader), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		//影ミス用
+		memcpy(data + (shaderTblSize * index++), rootProp->GetShaderIdentifier(kshadowMiss), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		//床のヒット用
-		memcpy(data + (shaderTblSize * index++), rootProp->GetShaderIdentifier(kPlaneHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		char* planeEntry = data + (shaderTblSize * index++);
+		memcpy(planeEntry, rootProp->GetShaderIdentifier(kPlaneHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+		*(unsigned __int64*)(planeEntry + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES) = outputHeap->GetGPUDescriptorHandleForHeapStart().ptr + device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//床影ヒット用
+		memcpy(data + (shaderTblSize * index++), rootProp->GetShaderIdentifier(kShadowHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		//三角形のヒット用＆定数バッファ
 		for (size_t i = 0; i < constant.size(); ++i)
 		{
@@ -946,6 +962,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			entry += D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			_ASSERT((unsigned long long)entry % 8 == 0);
 			*(D3D12_GPU_VIRTUAL_ADDRESS*)entry = constant[i]->GetGPUVirtualAddress();
+			//三角形影ヒット用
+			memcpy(data + (shaderTblSize * index++), rootProp->GetShaderIdentifier(kShadowHitGroup), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 		}
 
 		shaderTbl->Unmap(0, nullptr);
