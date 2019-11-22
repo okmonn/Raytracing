@@ -728,10 +728,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Execution(queue, swap, list, fence);
 	}
 
-	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kTriangleChs, kPlaneChs, /*kShadowChs, kshadowMiss*/ }, L"lib_6_3");
+	ShaderLibrary::Get().Compile(L"sample.hlsl", L"", { kRayGenShader, kMissShader, kTriangleChs, kPlaneChs, kShadowChs, kshadowMiss }, L"lib_6_3");
 
 	//ルートシグネチャ・パイプライン生成
-	std::array<D3D12_STATE_SUBOBJECT, 13>sub;
+	std::array<D3D12_STATE_SUBOBJECT, 16>sub;
 	unsigned int index = 0;
 	Root global;
 	CreateGlobalRoot(device, global, {});
@@ -925,7 +925,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		desc.MipLevels        = 1;
 		desc.SampleDesc       = { 1, 0 };
-		desc.Width            = shaderTblSize * (2 + PLANE_INSTANCE + TRIANGLE_INSTANCE);
+		desc.Width            = shaderTblSize * (11);
 
 		CreateRsc(device, &shaderTbl, prop, desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 
@@ -992,11 +992,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		desc.RayGenerationShaderRecord.StartAddress = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
 		//ミスヒット用
 		desc.MissShaderTable.SizeInBytes   = shaderTblSize;
-		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
+		desc.MissShaderTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No);
 		desc.MissShaderTable.StrideInBytes = shaderTblSize;
+
+		No += 2;
+
 		//ヒット用
-		desc.HitGroupTable.SizeInBytes   = shaderTblSize * (0 + TRIANGLE_INSTANCE);
-		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No++);
+		desc.HitGroupTable.SizeInBytes   = shaderTblSize * (8);
+		desc.HitGroupTable.StartAddress  = shaderTbl->GetGPUVirtualAddress() + (shaderTblSize * No);
 		desc.HitGroupTable.StrideInBytes = shaderTblSize;
 
 		list->SetDescriptorHeaps(1, &outputHeap);
