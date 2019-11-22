@@ -232,7 +232,7 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	}
 
 	acceleration.input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	acceleration.input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	acceleration.input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
 	acceleration.input.NumDescs      = instanceNum;
 	acceleration.input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 	acceleration.input.InstanceDescs = acceleration.instance->GetGPUVirtualAddress();
@@ -302,6 +302,63 @@ void CreateTopLevel(ID3D12Device5* device, Acceleration& acceleration, const Acc
 	acceleration.instance->Unmap(0, nullptr);
 }
 
+// トップレベル加速構造の更新
+void UpDataTopLevel(ID3D12Device5* device, ID3D12GraphicsCommandList5* list, Acceleration& acceleration, const Acceleration* bottom, const float& angle, const size_t& instanceNum = 1)
+{
+	Barrier(list, acceleration.result);
+
+	D3D12_RAYTRACING_INSTANCE_DESC* ptr = nullptr;
+	auto hr = acceleration.instance->Map(0, nullptr, (void**)&ptr);
+	_ASSERT(hr == S_OK);
+	float mat[3][4] = {
+		{ 1.0f, 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 1.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, 1.0f, 0.0f },
+	};
+	float rot[3][4] = {
+		{std::cos(RAD(angle)), 0.0f, -std::sin(RAD(angle)), 0.0f},
+		{                0.0f, 1.0f,                  0.0f, 0.0f},
+		{std::sin(RAD(angle)), 0.0f,  std::cos(RAD(angle)), 0.0f}
+	};
+	float tmp[] = {
+		0.0f,
+		0.0f,
+		-2.0f,
+		2.0f
+	};
+
+	ptr[0].AccelerationStructure = bottom[0].result->GetGPUVirtualAddress();
+	ptr[0].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+	ptr[0].InstanceContributionToHitGroupIndex = 0;
+	ptr[0].InstanceID = 0;
+	ptr[0].InstanceMask = 0xff;
+	mat[0][3] = tmp[0];
+	memcpy(ptr[0].Transform, &mat, sizeof(mat));
+
+	for (size_t i = 1; i < instanceNum; ++i)
+	{
+		ptr[i].AccelerationStructure = bottom[1].result->GetGPUVirtualAddress();
+		ptr[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		ptr[i].InstanceContributionToHitGroupIndex = i * 2;
+		ptr[i].InstanceID = i;
+		ptr[i].InstanceMask = 0xff;
+		rot[0][3] = tmp[i];
+		memcpy(ptr[i].Transform, &rot, sizeof(rot));
+	}
+	acceleration.instance->Unmap(0, nullptr);
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+	desc.DestAccelerationStructureData    = acceleration.result->GetGPUVirtualAddress();
+	desc.Inputs                           = acceleration.input;
+	desc.Inputs.Flags                    |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	desc.Inputs.InstanceDescs             = acceleration.instance->GetGPUVirtualAddress();
+	desc.ScratchAccelerationStructureData = acceleration.scratch->GetGPUVirtualAddress();
+	desc.SourceAccelerationStructureData  = acceleration.result->GetGPUVirtualAddress();
+	list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+
+	Barrier(list, acceleration.result);
+}
+
 // ボトムレベル加速構造の生成
 void CreateBottomLevel(ID3D12Device5* device, Acceleration& acceleration, ID3D12Resource* vertex)
 {
@@ -353,11 +410,6 @@ void BuildAcceleration(ID3D12GraphicsCommandList5* list, const Acceleration& acc
 	desc.DestAccelerationStructureData    = acceleration.result->GetGPUVirtualAddress();
 	desc.Inputs                           = acceleration.input;
 	desc.ScratchAccelerationStructureData = acceleration.scratch->GetGPUVirtualAddress();
-	if (acceleration.instance != nullptr)
-	{
-		//desc.SourceAccelerationStructureData = acceleration.instance->GetGPUVirtualAddress();
-	}
-
 	list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 
 	Barrier(list, acceleration.result);
@@ -969,10 +1021,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		shaderTbl->Unmap(0, nullptr);
 	}
 
+	float angle = 0.0f;
 	while (CheckMsg() == true)
 	{
 		unsigned int index = swap->GetCurrentBackBufferIndex();
 		InitCommand(allocator[index], list);
+
+		UpDataTopLevel(device, list, top, bottom.data(), angle, PLANE_INSTANCE + TRIANGLE_INSTANCE);
+		angle += 0.01f;
 
 		list->SetComputeRootSignature(global.root);
 		list->SetPipelineState1(pipe);

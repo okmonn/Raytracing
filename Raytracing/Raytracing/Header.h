@@ -8,6 +8,9 @@
 // メモリ開放
 #define Release(X) { if((X) != nullptr) (X)->Release(); (X) = nullptr; }
 
+// ラジアン変換
+#define RAD(X) (X) * std::acos(-1.0f) / 180.0f
+
 // ウィンドウサイズX
 #define WINSIZE_X 640
 // ウィンドウサイズY
