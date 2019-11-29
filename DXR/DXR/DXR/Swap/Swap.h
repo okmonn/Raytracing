@@ -8,7 +8,7 @@ class Swap
 {
 public:
 	// コンストラクタ
-	Swap(Window* win, Queue* queue, const size_t& bufferNum = 2);
+	Swap(const Window* win, const Queue* queue, const size_t& bufferNum = 2);
 	// デストラク
 	~Swap();
 
@@ -26,7 +26,7 @@ public:
 
 private:
 	// スワップチェインの生成
-	void CreateSwap(Window* win, Queue* queue, const size_t& bufferNum);
+	void CreateSwap(const Window* win, const Queue* queue, const size_t& bufferNum);
 
 
 	// スワップチェイン

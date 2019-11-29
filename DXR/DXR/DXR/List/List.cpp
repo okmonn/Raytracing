@@ -20,6 +20,16 @@ List::~List()
 	}
 }
 
+// UAVバリア
+void List::Barrier(ID3D12Resource* rsc) const
+{
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type          = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	barrier.UAV.pResource = rsc;
+
+	list->ResourceBarrier(1, &barrier);
+}
+
 // コマンドリストの生成
 void List::CreateList(const DXR::CommandType& type)
 {

@@ -33,7 +33,7 @@ void Queue::CreateQueue(const DXR::CommandType& type)
 }
 
 // コマンドキューの取得
-ID3D12CommandQueue* Queue::Get(void)
+ID3D12CommandQueue* Queue::Get(void) const
 {
 	return queue;
 }

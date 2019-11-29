@@ -37,6 +37,21 @@
     <Filter Include="Descriptor">
       <UniqueIdentifier>{b4d52da4-3c68-4490-9513-486eeb9b37d3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Descriptor\RenderTargetView">
+      <UniqueIdentifier>{fadd5f47-f838-4e86-bfa5-88257f6816e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Descriptor\Primitive">
+      <UniqueIdentifier>{825621b4-9dbf-40d5-92f8-430fc1675b49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Descriptor\Acceleration">
+      <UniqueIdentifier>{54553725-5678-4392-a3d1-ce0b6398bc8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RootSignature">
+      <UniqueIdentifier>{941aaed0-7dbb-4af0-bcf6-4279fb28aae6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Func">
+      <UniqueIdentifier>{c8d93d9c-4a0a-437d-be7f-26d256921d4d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -65,6 +80,21 @@
     </ClCompile>
     <ClCompile Include="DXR\Descriptor\Descriptor.cpp">
       <Filter>Descriptor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Descriptor\Render\Render.cpp">
+      <Filter>Descriptor\RenderTargetView</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Descriptor\Primitive\Primitive.cpp">
+      <Filter>Descriptor\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Descriptor\Acceleration\Acceleration.cpp">
+      <Filter>Descriptor\Acceleration</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Root\Root.cpp">
+      <Filter>RootSignature</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Func\Func.cpp">
+      <Filter>Func</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -97,6 +127,24 @@
     </ClInclude>
     <ClInclude Include="DXR\Descriptor\Descriptor.h">
       <Filter>Descriptor</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Descriptor\Render\Render.h">
+      <Filter>Descriptor\RenderTargetView</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Descriptor\Primitive\Primitive.h">
+      <Filter>Descriptor\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Descriptor\Acceleration\Acceleration.h">
+      <Filter>Descriptor\Acceleration</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Matrix.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Root\Root.h">
+      <Filter>RootSignature</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Func\Func.h">
+      <Filter>Func</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

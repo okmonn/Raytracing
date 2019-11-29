@@ -7,7 +7,7 @@ class Fence
 {
 public:
 	// コンストラクタ
-	Fence(Queue* queue);
+	Fence(const Queue* queue);
 	// デストラク
 	~Fence();
 
@@ -20,7 +20,7 @@ private:
 
 
 	// キュー
-	Queue* queue;
+	const Queue* queue;
 
 	// フェンス
 	ID3D12Fence1* fence;

@@ -7,7 +7,7 @@
 #include <dxgi1_6.h>
 
 // コンストラクタ
-Swap::Swap(Window* win, Queue* queue, const size_t& bufferNum) :
+Swap::Swap(const Window* win, const Queue* queue, const size_t& bufferNum) :
 	swap(nullptr)
 {
 	CreateSwap(win, queue, bufferNum);
@@ -24,7 +24,7 @@ Swap::~Swap()
 }
 
 // スワップチェインの生成
-void Swap::CreateSwap(Window* win, Queue* queue, const size_t& bufferNum)
+void Swap::CreateSwap(const Window* win, const Queue* queue, const size_t& bufferNum)
 {
 	Microsoft::WRL::ComPtr<IDXGIFactory7>factory = nullptr;
 	auto hr = CreateDXGIFactory(IID_PPV_ARGS(&factory));

@@ -128,23 +128,34 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DXR\Allocator\Allocator.cpp" />
+    <ClCompile Include="DXR\Descriptor\Acceleration\Acceleration.cpp" />
     <ClCompile Include="DXR\Descriptor\Descriptor.cpp" />
+    <ClCompile Include="DXR\Descriptor\Primitive\Primitive.cpp" />
+    <ClCompile Include="DXR\Descriptor\Render\Render.cpp" />
     <ClCompile Include="DXR\Device\Device.cpp" />
     <ClCompile Include="DXR\Fence\Fence.cpp" />
+    <ClCompile Include="DXR\Func\Func.cpp" />
     <ClCompile Include="DXR\List\List.cpp" />
     <ClCompile Include="DXR\Queue\Queue.cpp" />
+    <ClCompile Include="DXR\Root\Root.cpp" />
     <ClCompile Include="DXR\Swap\Swap.cpp" />
     <ClCompile Include="DXR\Window\Window.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DXR\Allocator\Allocator.h" />
+    <ClInclude Include="DXR\Descriptor\Acceleration\Acceleration.h" />
     <ClInclude Include="DXR\Descriptor\Descriptor.h" />
+    <ClInclude Include="DXR\Descriptor\Primitive\Primitive.h" />
+    <ClInclude Include="DXR\Descriptor\Render\Render.h" />
     <ClInclude Include="DXR\Device\Device.h" />
     <ClInclude Include="DXR\Fence\Fence.h" />
+    <ClInclude Include="DXR\Func\Func.h" />
     <ClInclude Include="DXR\Information.h" />
     <ClInclude Include="DXR\List\List.h" />
+    <ClInclude Include="DXR\Matrix.h" />
     <ClInclude Include="DXR\Queue\Queue.h" />
+    <ClInclude Include="DXR\Root\Root.h" />
     <ClInclude Include="DXR\Swap\Swap.h" />
     <ClInclude Include="DXR\Vector.h" />
     <ClInclude Include="DXR\Window\Window.h" />

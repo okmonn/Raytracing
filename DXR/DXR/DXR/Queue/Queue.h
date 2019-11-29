@@ -12,7 +12,7 @@ public:
 	~Queue();
 
 	// コマンドキューの取得
-	ID3D12CommandQueue* Get(void);
+	ID3D12CommandQueue* Get(void) const;
 
 private:
 	// コマンドキューの生成

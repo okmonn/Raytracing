@@ -2,6 +2,7 @@
 #include "../Information.h"
 
 struct ID3D12GraphicsCommandList5;
+struct ID3D12Resource;
 
 class List
 {
@@ -10,6 +11,9 @@ public:
 	List(const DXR::CommandType& type);
 	// デストラク
 	~List();
+
+	// UAVバリア
+	void Barrier(ID3D12Resource* rsc) const;
 
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList5* Get(void) const;

@@ -13,11 +13,6 @@ struct D3D12_CLEAR_VALUE;
 class Descriptor
 {
 public:
-	// コンストラクタ
-	Descriptor();
-	// デストラク
-	virtual ~Descriptor();
-
 	// ヒープの取得
 	ID3D12DescriptorHeap* Heap(void) const;
 
@@ -30,12 +25,29 @@ public:
 private:
 
 protected:
+	// コンストラクタ
+	Descriptor();
+	// デストラク
+	virtual ~Descriptor();
+
 	// ヒープの生成
 	void CreateHeap(const D3D12_DESCRIPTOR_HEAP_TYPE& type, const size_t& rscNum, const bool& shader = false);
 
+	// デフォルトプロパティの取得
+	D3D12_HEAP_PROPERTIES DefaultProp(void);
+
+	// アップロードプロパティの取得
+	D3D12_HEAP_PROPERTIES UploadProp(void);
+
 	// リソースの生成
 	void CreateRsc(const D3D12_HEAP_PROPERTIES& prop, const D3D12_RESOURCE_DESC& desc, const D3D12_RESOURCE_STATES& state, 
-		const size_t& index, const D3D12_HEAP_FLAGS& flag = D3D12_HEAP_FLAGS(0), const D3D12_CLEAR_VALUE* clear = nullptr);
+		const size_t& index = 0, const D3D12_HEAP_FLAGS& flag = D3D12_HEAP_FLAGS(0), const D3D12_CLEAR_VALUE* clear = nullptr);
+
+	// マップ
+	void Map(void** buf, const size_t& index = 0);
+
+	// アンマップ
+	void UnMap(const size_t& index = 0);
 
 
 	// ヒープ
