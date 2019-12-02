@@ -46,11 +46,23 @@
     <Filter Include="Descriptor\Acceleration">
       <UniqueIdentifier>{54553725-5678-4392-a3d1-ce0b6398bc8e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RootSignature">
-      <UniqueIdentifier>{941aaed0-7dbb-4af0-bcf6-4279fb28aae6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Func">
       <UniqueIdentifier>{c8d93d9c-4a0a-437d-be7f-26d256921d4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\RayGeneration">
+      <UniqueIdentifier>{4178b343-c9a8-422d-a09a-1e9e7fc14072}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject">
+      <UniqueIdentifier>{a23a2486-4872-4c79-8d30-4bf07ae31776}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\Shader">
+      <UniqueIdentifier>{658520e4-f07e-4c1d-9be6-8c7231586de8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\RootSignature">
+      <UniqueIdentifier>{f9191494-d34b-4dc9-930c-d3eb782c0a0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\HitProgram">
+      <UniqueIdentifier>{efed482b-603e-466d-b370-d30ecc056bc0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -90,11 +102,20 @@
     <ClCompile Include="DXR\Descriptor\Acceleration\Acceleration.cpp">
       <Filter>Descriptor\Acceleration</Filter>
     </ClCompile>
-    <ClCompile Include="DXR\Root\Root.cpp">
-      <Filter>RootSignature</Filter>
-    </ClCompile>
     <ClCompile Include="DXR\Func\Func.cpp">
       <Filter>Func</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\SubObj.cpp">
+      <Filter>SubObject</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\Shader\Shader.cpp">
+      <Filter>SubObject\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\Root\Root.cpp">
+      <Filter>SubObject\RootSignature</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\Hit\Hit.cpp">
+      <Filter>SubObject\HitProgram</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -140,11 +161,33 @@
     <ClInclude Include="DXR\Matrix.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="DXR\Root\Root.h">
-      <Filter>RootSignature</Filter>
-    </ClInclude>
     <ClInclude Include="DXR\Func\Func.h">
       <Filter>Func</Filter>
     </ClInclude>
+    <ClInclude Include="DXR\SubObj\SubObj.h">
+      <Filter>SubObject</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\Shader\Shader.h">
+      <Filter>SubObject\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\Root\Root.h">
+      <Filter>SubObject\RootSignature</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\Hit\Hit.h">
+      <Filter>SubObject\HitProgram</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="DXR\Shader\Generation.hlsl">
+      <Filter>リソース ファイル\RayGeneration</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DXR\Shader\Generation.hlsli">
+      <Filter>リソース ファイル\RayGeneration</Filter>
+    </None>
+    <None Include="DXR\Shader\Infomation.hlsli">
+      <Filter>リソース ファイル\RayGeneration</Filter>
+    </None>
   </ItemGroup>
 </Project>

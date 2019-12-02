@@ -15,6 +15,20 @@ std::wstring DXR::ChangeCode(const std::string& str)
 	return std::wstring(buf.begin(), buf.end());
 }
 
+// マルチバイト文字からユニコード文字に変換
+wchar_t* DXR::ChangeCode(const char* str)
+{
+	if (str == nullptr)
+	{
+		return nullptr;
+	}
+	
+	wchar_t* tmp = nullptr;
+	std::mbstowcs(tmp, str, std::strlen(str) + 1);
+
+	return tmp;
+}
+
 // シェーダのコンパイル
 void DXR::Compile(const std::string& fileName, const std::string& entry, const std::string& ver, ID3DBlob** blob)
 {

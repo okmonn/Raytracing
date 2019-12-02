@@ -8,7 +8,9 @@
 #include "DXR/Descriptor/Render/Render.h"
 #include "DXR/Descriptor/Primitive/Primitive.h"
 #include "DXR/Descriptor/Acceleration/Acceleration.h"
-#include "DXR/Root/Root.h"
+#include "DXR/SubObj/Root/Root.h"
+#include "DXR/SubObj/Shader/Shader.h"
+#include "DXR/SubObj/Hit/Hit.h"
 #include <d3d12.h>
 
 // 三角形の頂点データ
@@ -31,6 +33,9 @@ int main()
 	Acceleration bottom(&list, &triangle);
 	Acceleration top(&list, &bottom, 1);
 	Root global();
+	Shader shader("DXR/Shader/Raygeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss" });
+	Root RayGen(&shader);
+	Hit hit("hit", "CHS");
 	
 	while (Window::CheckMsg())
 	{
