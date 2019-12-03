@@ -40,7 +40,7 @@ private:
 	void CreateTop(const Acceleration* bottom, const size_t& bottomNum);
 
 	// ビルド
-	void Build(const List* list, const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input);
+	void Build(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input);
 
 
 	// リスト

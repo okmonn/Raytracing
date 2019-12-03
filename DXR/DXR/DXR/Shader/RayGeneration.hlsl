@@ -1,4 +1,4 @@
-#include "Generation.hlsli"
+#include "RayGeneration.hlsli"
 #include "Infomation.hlsli"
 
 // レイジェネレーション

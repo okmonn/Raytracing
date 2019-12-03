@@ -3,6 +3,7 @@
 
 struct ID3D12GraphicsCommandList5;
 struct ID3D12Resource;
+class Allocator;
 
 class List
 {
@@ -11,6 +12,12 @@ public:
 	List(const DXR::CommandType& type);
 	// デストラク
 	~List();
+
+	// コマンドリストのリセット
+	void Reset(const Allocator* allo) const;
+
+	// コマンドリストのクローズ
+	void Close(void) const;
 
 	// UAVバリア
 	void Barrier(ID3D12Resource* rsc) const;

@@ -175,7 +175,7 @@
     <ClInclude Include="DXR\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DXR\Shader\Generation.hlsl">
+    <FxCompile Include="DXR\Shader\RayGeneration.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Library</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Library</ShaderType>
@@ -195,7 +195,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DXR\Shader\Generation.hlsli">
+    <None Include="DXR\Shader\RayGeneration.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

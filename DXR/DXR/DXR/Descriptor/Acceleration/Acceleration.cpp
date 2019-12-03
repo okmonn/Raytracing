@@ -10,8 +10,8 @@
 #define TOP_RSC_NUM 3
 
 // コンストラクタ
-Acceleration::Acceleration(const List* list, const Primitive* prim) : prim(prim),
-	list(nullptr), buf(nullptr)
+Acceleration::Acceleration(const List* list, const Primitive* prim) : list(list), prim(prim),
+	buf(nullptr)
 {
 	rsc.resize(BOTTOM_RSC_NUM);
 
@@ -71,7 +71,7 @@ void Acceleration::CreateBottom(void)
 	desc.Width = info.ResultDataMaxSizeInBytes;
 	CreateRsc(DefaultProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, index);
 
-	Build(list, input);
+	Build(input);
 }
 
 // トップレベルの生成
@@ -117,11 +117,11 @@ void Acceleration::CreateTop(const Acceleration* bottom, const size_t& bottomNum
 	desc.Width = info.ResultDataMaxSizeInBytes;
 	CreateRsc(DefaultProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, index);
 
-	Build(list, input);
+	Build(input);
 }
 
 // ビルド
-void Acceleration::Build(const List* list, const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input)
+void Acceleration::Build(const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input)
 {
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
 	desc.DestAccelerationStructureData    = Result()->GetGPUVirtualAddress();

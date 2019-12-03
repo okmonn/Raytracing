@@ -59,11 +59,11 @@ void Root::CreateLocal(void)
 // ローカルルートシグネチャの生成
 void Root::CreateLocal(const Shader* shader)
 {
-	Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
+	/*Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
 	auto hr = D3DGetBlobPart(shader->Get()->GetBufferPointer(), shader->Get()->GetBufferSize(), D3D_BLOB_PART::D3D_BLOB_ROOT_SIGNATURE, 0, &sig);
-	_ASSERT(hr == S_OK);
+	_ASSERT(hr == S_OK);*/
 
-	hr = Device::Get()->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&root));
+	auto hr = Device::Get()->CreateRootSignature(0, shader->Get()->GetBufferPointer(), shader->Get()->GetBufferSize(), IID_PPV_ARGS(&root));
 	_ASSERT(hr == S_OK);
 
 	(*sub).pDesc = &root;

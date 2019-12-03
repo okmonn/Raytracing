@@ -1,5 +1,6 @@
 #include "List.h"
 #include "../Device/Device.h"
+#include "../Allocator/Allocator.h"
 #include <d3d12.h>
 #include <crtdbg.h>
 
@@ -18,6 +19,20 @@ List::~List()
 		list->Release();
 		list = nullptr;
 	}
+}
+
+// コマンドリストのリセット
+void List::Reset(const Allocator* allo) const
+{
+	auto hr = list->Reset(allo->Get(), nullptr);
+	_ASSERT(hr == S_OK);
+}
+
+// コマンドリストのクローズ
+void List::Close(void) const
+{
+	auto hr = list->Close();
+	_ASSERT(hr == S_OK);
 }
 
 // UAVバリア

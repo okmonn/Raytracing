@@ -27,6 +27,13 @@ void Allocator::CreateAllo(const DXR::CommandType& type)
 	_ASSERT(hr == S_OK);
 }
 
+// コマンドアロケータ
+void Allocator::Reset(void) const
+{
+	auto hr = allo->Reset();
+	_ASSERT(hr == S_OK);
+}
+
 // コマンドアロケータの取得
 ID3D12CommandAllocator* Allocator::Get(void) const
 {

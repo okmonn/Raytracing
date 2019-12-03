@@ -11,6 +11,9 @@ public:
 	// デストラク
 	~Allocator();
 
+	// コマンドアロケータ
+	void Reset(void) const;
+
 	// コマンドアロケータの取得
 	ID3D12CommandAllocator* Get(void) const;
 

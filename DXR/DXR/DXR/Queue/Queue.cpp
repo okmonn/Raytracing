@@ -20,6 +20,12 @@ Queue::~Queue()
 	}
 }
 
+// コマンドの実行
+void Queue::Execution(ID3D12CommandList* const* list, const size_t& num)
+{
+	queue->ExecuteCommandLists(unsigned int(num), list);
+}
+
 // コマンドキューの生成
 void Queue::CreateQueue(const DXR::CommandType& type)
 {

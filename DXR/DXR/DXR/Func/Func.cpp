@@ -16,23 +16,22 @@ std::wstring DXR::ChangeCode(const std::string& str)
 }
 
 // マルチバイト文字からユニコード文字に変換
-wchar_t* DXR::ChangeCode(const char* str)
+const wchar_t* DXR::ChangeCode(const char* str)
 {
 	if (str == nullptr)
 	{
 		return nullptr;
 	}
-	
-	wchar_t* tmp = nullptr;
-	std::mbstowcs(tmp, str, std::strlen(str) + 1);
 
-	return tmp;
+	std::string tmp(str);
+
+	return ChangeCode(tmp).data();
 }
 
 // マルチバイト文字の配列からユニコード文字の配列に変換
-wchar_t** DXR::ChangeCode(const char** str, const size_t& num)
+const wchar_t** DXR::ChangeCode(const char** str, const size_t& num)
 {
-	std::vector<wchar_t*>tmp(num);
+	std::vector<const wchar_t*>tmp(num);
 	for (size_t i = 0; i < tmp.size(); ++i)
 	{
 		tmp[i] = ChangeCode(str[i]);
@@ -51,6 +50,8 @@ void DXR::Compile(const std::string& fileName, const std::string& entry, const s
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler>handle = nullptr;
 	hr = library->CreateIncludeHandler(&handle);
 	_ASSERT(hr == S_OK);
+
+	auto a = ChangeCode(fileName);
 
 	Microsoft::WRL::ComPtr<IDxcBlobEncoding>encode = nullptr;
 	hr = library->CreateBlobFromFile(ChangeCode(fileName).c_str(), nullptr, &encode);

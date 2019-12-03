@@ -34,11 +34,20 @@ int main()
 	Swap swap(&win, &queue);
 	Render render(&swap);
 	Primitive triangle(triVertex, _countof(triVertex));
+
+	allo.Reset();
+	list.Reset(&allo);
 	Acceleration bottom(&list, &triangle);
 	Acceleration top(&list, &bottom, 1);
+	list.Close();
+	ID3D12CommandList* tmp[] = {
+		list.Get()
+	};
+	queue.Execution(tmp);
+	fence.Wait();
 
 
-	Shader shader("DXR/Shader/Raygeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss", "Chs" });
+	Shader shader("DXR/Shader/RayGeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss", "Chs" });
 	
 	Hit hit("hit", "Chs");
 	
