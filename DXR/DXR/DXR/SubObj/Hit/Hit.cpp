@@ -4,7 +4,7 @@
 
 // コンストラクタ
 Hit::Hit(const std::string& hitName, const char* closest, const char* any) :
-	group(std::make_unique<D3D12_HIT_GROUP_DESC>()), hitName(DXR::ChangeCode(hitName))
+	hitName(DXR::ChangeCode(hitName))
 {
 	CreateSub(DXR::ChangeCode(closest), DXR::ChangeCode(any));
 }
@@ -17,10 +17,12 @@ Hit::~Hit()
 // サブオブジェクトの生成
 void Hit::CreateSub(const wchar_t* closest, const wchar_t* any)
 {
-	(*group).AnyHitShaderImport     = any;
-	(*group).ClosestHitShaderImport = closest;
-	(*group).HitGroupExport         = hitName.c_str();
+	D3D12_HIT_GROUP_DESC desc{};
 
-	(*sub).pDesc = &(*group);
+	desc.AnyHitShaderImport     = any;
+	desc.ClosestHitShaderImport = closest;
+	desc.HitGroupExport         = hitName.c_str();
+
+	(*sub).pDesc = &desc;
 	(*sub).Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
 }

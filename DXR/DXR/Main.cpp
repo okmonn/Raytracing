@@ -11,6 +11,10 @@
 #include "DXR/SubObj/Root/Root.h"
 #include "DXR/SubObj/Shader/Shader.h"
 #include "DXR/SubObj/Hit/Hit.h"
+#include "DXR/SubObj/Association/Association.h"
+#include "DXR/SubObj/ShaderConfig/ShaderConfig.h"
+#include "DXR/SubObj/PipeConfig/PipeConfig.h"
+#include "DXR/Pipe/Pipe.h"
 #include <d3d12.h>
 
 // 三角形の頂点データ
@@ -32,10 +36,26 @@ int main()
 	Primitive triangle(triVertex, _countof(triVertex));
 	Acceleration bottom(&list, &triangle);
 	Acceleration top(&list, &bottom, 1);
-	Root global();
-	Shader shader("DXR/Shader/Raygeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss" });
-	Root RayGen(&shader);
-	Hit hit("hit", "CHS");
+
+
+	Shader shader("DXR/Shader/Raygeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss", "Chs" });
+	
+	Hit hit("hit", "Chs");
+	
+	Root rayGen(&shader);
+	Association rayAsso(&rayGen, { "RayGen" });
+
+	Root miss(nullptr);
+	Association missAsso(&miss, { "Miss" });
+
+	ShaderConfig sConfig(sizeof(bool));
+	Association configAsso(&sConfig, { "RayGen", "Miss" });
+
+	PipeConfig pConfig(0);
+	
+	Root global;
+
+	Pipe pipe({&shader, &hit, &rayGen, &rayAsso, &miss, &missAsso, &sConfig, &configAsso, &pConfig, &global});
 	
 	while (Window::CheckMsg())
 	{

@@ -1,9 +1,7 @@
 #pragma once
 #include "../Descriptor.h"
 #include <vector>
-#include <memory>
 
-struct D3D12_RAYTRACING_GEOMETRY_DESC;
 struct D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS;
 struct D3D12_RAYTRACING_INSTANCE_DESC;
 class List;
@@ -34,9 +32,6 @@ public:
 	// インスタンスリソースの取得
 	ID3D12Resource* Instance(void) const;
 
-	// 加速構造入力情報の取得
-	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS Input(void) const;
-
 private:
 	// ボトムレベルの生成
 	void CreateBottom(void);
@@ -45,7 +40,7 @@ private:
 	void CreateTop(const Acceleration* bottom, const size_t& bottomNum);
 
 	// ビルド
-	void Build(const List* list);
+	void Build(const List* list, const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input);
 
 
 	// リスト
@@ -56,12 +51,6 @@ private:
 
 	// バッファ
 	D3D12_RAYTRACING_INSTANCE_DESC* buf;
-
-	// ジオメトリ情報
-	std::unique_ptr<D3D12_RAYTRACING_GEOMETRY_DESC>geo;
-
-	// 加速構造入力情報
-	std::unique_ptr<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>input;
 
 	// ボトムレベル
 	std::vector<const Acceleration*>bottom;

@@ -12,7 +12,14 @@ void RayGen()
 
 // ミス
 [shader("miss")]
-void Miss(Payload payload)
+void Miss(inout Payload payload)
 {
     payload.hit = false;
+}
+
+// クローゼストヒット
+[shader("closesthit")]
+void Chs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribute)
+{
+    payload.hit = true;
 }

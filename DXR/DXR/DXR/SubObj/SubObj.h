@@ -7,7 +7,7 @@ class SubObj
 {
 public:
 	// サブオブジェクトの取得
-	D3D12_STATE_SUBOBJECT Sub(void);
+	D3D12_STATE_SUBOBJECT Sub(void) const;
 
 private:
 

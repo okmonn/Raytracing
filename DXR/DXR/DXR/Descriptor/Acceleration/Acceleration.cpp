@@ -3,7 +3,6 @@
 #include "../../List/List.h"
 #include "../Primitive/Primitive.h"
 #include <d3d12.h>
-#include <crtdbg.h>
 
 // ボトムレベルのリソース数
 #define BOTTOM_RSC_NUM 2
@@ -12,22 +11,20 @@
 
 // コンストラクタ
 Acceleration::Acceleration(const List* list, const Primitive* prim) : prim(prim),
-	list(nullptr), buf(nullptr), geo(nullptr), input(std::make_unique<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>())
+	list(nullptr), buf(nullptr)
 {
 	rsc.resize(BOTTOM_RSC_NUM);
 
 	CreateBottom();
-	Build(list);
 }
 
 // コンストラクタ
 Acceleration::Acceleration(const List* list, const Acceleration* bottom, const size_t& bottomNum) : list(list),
-	prim(nullptr), buf(nullptr), geo(nullptr), input(std::make_unique<D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS>())
+	prim(nullptr), buf(nullptr)
 {
 	rsc.resize(TOP_RSC_NUM);
 
 	CreateTop(bottom, bottomNum);
-	Build(list);
 }
 
 // デストラクタ
@@ -39,22 +36,23 @@ Acceleration::~Acceleration()
 // ボトムレベルの生成
 void Acceleration::CreateBottom(void)
 {
-	geo = std::make_unique<D3D12_RAYTRACING_GEOMETRY_DESC>();
-	geo->Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-	geo->Triangles.VertexBuffer.StartAddress  = prim->Get()->GetGPUVirtualAddress();
-	geo->Triangles.VertexBuffer.StrideInBytes = sizeof(Vec3f);
-	geo->Triangles.VertexCount                = unsigned int(prim->Get()->GetDesc().Width / geo->Triangles.VertexBuffer.StrideInBytes);
-	geo->Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-	geo->Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	D3D12_RAYTRACING_GEOMETRY_DESC geo{};
+	geo.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	geo.Triangles.VertexBuffer.StartAddress  = prim->Get()->GetGPUVirtualAddress();
+	geo.Triangles.VertexBuffer.StrideInBytes = sizeof(Vec3f);
+	geo.Triangles.VertexCount                = unsigned int(prim->Get()->GetDesc().Width / geo.Triangles.VertexBuffer.StrideInBytes);
+	geo.Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+	geo.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
 
-	input->DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	input->Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-	input->NumDescs       = 1;
-	input->pGeometryDescs = &(*geo);
-	input->Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
+	input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	input.NumDescs       = 1;
+	input.pGeometryDescs = &geo;
+	input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
-	Device::Get()->GetRaytracingAccelerationStructurePrebuildInfo(&(*input), &info);
+	Device::Get()->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
 
 	D3D12_RESOURCE_DESC desc{};
 	desc.DepthOrArraySize = 1;
@@ -72,6 +70,8 @@ void Acceleration::CreateBottom(void)
 
 	desc.Width = info.ResultDataMaxSizeInBytes;
 	CreateRsc(DefaultProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, index);
+
+	Build(list, input);
 }
 
 // トップレベルの生成
@@ -100,14 +100,15 @@ void Acceleration::CreateTop(const Acceleration* bottom, const size_t& bottomNum
 	CreateRsc(UploadProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, index);
 	Map((void**)&buf, index--);
 
-	input->DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-	input->Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
-	input->InstanceDescs = (*rsc.rbegin())->GetGPUVirtualAddress();
-	input->NumDescs      = unsigned int(instanceNum);
-	input->Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
+	input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+	input.InstanceDescs = Instance()->GetGPUVirtualAddress();
+	input.NumDescs      = unsigned int(instanceNum);
+	input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
-	Device::Get()->GetRaytracingAccelerationStructurePrebuildInfo(&(*input), &info);
+	Device::Get()->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
 
 	desc.Flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	desc.Width = info.ScratchDataSizeInBytes;
@@ -115,14 +116,16 @@ void Acceleration::CreateTop(const Acceleration* bottom, const size_t& bottomNum
 
 	desc.Width = info.ResultDataMaxSizeInBytes;
 	CreateRsc(DefaultProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, index);
+
+	Build(list, input);
 }
 
 // ビルド
-void Acceleration::Build(const List* list)
+void Acceleration::Build(const List* list, const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& input)
 {
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
 	desc.DestAccelerationStructureData    = Result()->GetGPUVirtualAddress();
-	desc.Inputs                           = Input();
+	desc.Inputs                           = input;
 	desc.ScratchAccelerationStructureData = Scratch()->GetGPUVirtualAddress();
 
 	list->Get()->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
@@ -134,6 +137,7 @@ void Acceleration::UpData(const size_t& rayNum)
 {
 	list->Barrier(Result());
 
+	size_t instanceNum = 0;
 	for (size_t i = 0; i < bottom.size(); ++i)
 	{
 		for (size_t n = 0; n < bottom[i]->prim->InstanceNum(); ++n)
@@ -147,12 +151,20 @@ void Acceleration::UpData(const size_t& rayNum)
 
 			std::memcpy((void*)buf[index].Transform, bottom[i]->prim->Matrix(n).mat, sizeof(bottom[i]->prim->Matrix(n).mat));
 		}
+
+		instanceNum += bottom[i]->prim->InstanceNum();
 	}
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
+	input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+	input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	input.InstanceDescs = Instance()->GetGPUVirtualAddress();
+	input.NumDescs      = unsigned int(instanceNum);
+	input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
 	desc.DestAccelerationStructureData    = Result()->GetGPUVirtualAddress();
-	desc.Inputs                           = Input();
-	desc.Inputs.Flags                    |= D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	desc.Inputs                           = input;
 	desc.Inputs.InstanceDescs             = Instance()->GetGPUVirtualAddress();
 	desc.ScratchAccelerationStructureData = Scratch()->GetGPUVirtualAddress();
 	desc.SourceAccelerationStructureData  = Result()->GetGPUVirtualAddress();
@@ -177,10 +189,4 @@ ID3D12Resource* Acceleration::Scratch(void) const
 ID3D12Resource* Acceleration::Instance(void) const
 {
 	return *rsc.rbegin();
-}
-
-// 加速構造入力情報の取得
-D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS Acceleration::Input(void) const
-{
-	return *input;
 }

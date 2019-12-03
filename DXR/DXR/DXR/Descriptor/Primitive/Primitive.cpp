@@ -1,6 +1,5 @@
 #include "Primitive.h"
 #include <d3d12.h>
-#include <crtdbg.h>
 
 // コンストラクタ
 Primitive::Primitive(const Vec3f* vertex, const size_t& vertexNum, const size_t& instanceNum) : 

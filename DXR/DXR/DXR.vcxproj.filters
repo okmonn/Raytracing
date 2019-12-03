@@ -64,6 +64,18 @@
     <Filter Include="SubObject\HitProgram">
       <UniqueIdentifier>{efed482b-603e-466d-b370-d30ecc056bc0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SubObject\Association">
+      <UniqueIdentifier>{53ad8f0a-40c3-4a78-bd35-a7a93b531458}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\ShaderConfig">
+      <UniqueIdentifier>{0d7d24b3-103f-4952-b99d-1ec550dc7e11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\PipeConfig">
+      <UniqueIdentifier>{8ccd8e04-6beb-46ea-bec7-afd9614d0ad6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pipeline">
+      <UniqueIdentifier>{5542baf1-044f-4080-bdb9-fa04a0371e1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -116,6 +128,18 @@
     </ClCompile>
     <ClCompile Include="DXR\SubObj\Hit\Hit.cpp">
       <Filter>SubObject\HitProgram</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\Association\Association.cpp">
+      <Filter>SubObject\Association</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\ShaderConfig\ShaderConfig.cpp">
+      <Filter>SubObject\ShaderConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\PipeConfig\PipeConfig.cpp">
+      <Filter>SubObject\PipeConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Pipe\Pipe.cpp">
+      <Filter>Pipeline</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +199,18 @@
     </ClInclude>
     <ClInclude Include="DXR\SubObj\Hit\Hit.h">
       <Filter>SubObject\HitProgram</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\Association\Association.h">
+      <Filter>SubObject\Association</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\ShaderConfig\ShaderConfig.h">
+      <Filter>SubObject\ShaderConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\PipeConfig\PipeConfig.h">
+      <Filter>SubObject\PipeConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Pipe\Pipe.h">
+      <Filter>Pipeline</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

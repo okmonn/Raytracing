@@ -22,6 +22,9 @@ public:
 
 private:
 	// ローカルルートシグネチャの生成
+	void CreateLocal(void);
+
+	// ローカルルートシグネチャの生成
 	void CreateLocal(const Shader* shader);
 
 	// グローバルルートシグネチャの生成

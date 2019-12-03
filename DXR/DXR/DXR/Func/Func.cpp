@@ -29,6 +29,18 @@ wchar_t* DXR::ChangeCode(const char* str)
 	return tmp;
 }
 
+// マルチバイト文字の配列からユニコード文字の配列に変換
+wchar_t** DXR::ChangeCode(const char** str, const size_t& num)
+{
+	std::vector<wchar_t*>tmp(num);
+	for (size_t i = 0; i < tmp.size(); ++i)
+	{
+		tmp[i] = ChangeCode(str[i]);
+	}
+
+	return tmp.data();
+}
+
 // シェーダのコンパイル
 void DXR::Compile(const std::string& fileName, const std::string& entry, const std::string& ver, ID3DBlob** blob)
 {
