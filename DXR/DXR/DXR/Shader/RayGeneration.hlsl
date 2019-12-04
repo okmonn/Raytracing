@@ -23,3 +23,4 @@ void Chs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribu
 {
     payload.hit = true;
 }
+

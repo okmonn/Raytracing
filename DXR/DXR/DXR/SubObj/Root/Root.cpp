@@ -59,7 +59,7 @@ void Root::CreateLocal(const Shader* shader)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob>sig = nullptr;
 
-	auto hr = Device::Get()->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&root));
+	auto hr = Device::Get()->CreateRootSignature(0, shader->Get()->GetBufferPointer(), shader->Get()->GetBufferSize(), IID_PPV_ARGS(&root));
 	_ASSERT(hr == S_OK);
 
 	(*sub).pDesc = &root;
