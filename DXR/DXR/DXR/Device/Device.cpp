@@ -6,6 +6,7 @@
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "dxcompiler.lib")
 
 // ‹@”\ƒŒƒxƒ‹
 const D3D_FEATURE_LEVEL levels[] = {

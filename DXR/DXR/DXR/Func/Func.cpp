@@ -4,8 +4,6 @@
 #include <dxcapi.h>
 #include <Windows.h>
 
-#pragma comment(lib, "dxcompiler.lib")
-
 // マルチバイト文字からユニコード文字に変換
 std::wstring DXR::ChangeCode(const std::string& str)
 {
@@ -50,8 +48,6 @@ void DXR::Compile(const std::string& fileName, const std::string& entry, const s
 	Microsoft::WRL::ComPtr<IDxcIncludeHandler>handle = nullptr;
 	hr = library->CreateIncludeHandler(&handle);
 	_ASSERT(hr == S_OK);
-
-	auto a = ChangeCode(fileName);
 
 	Microsoft::WRL::ComPtr<IDxcBlobEncoding>encode = nullptr;
 	hr = library->CreateBlobFromFile(ChangeCode(fileName).c_str(), nullptr, &encode);
