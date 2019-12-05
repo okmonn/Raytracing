@@ -10,7 +10,7 @@ class Shader :
 {
 public:
 	// コンストラクタ
-	Shader(const std::string& fileName, const std::string& entry, const std::string& ver, const std::initializer_list<std::string>& func);
+	Shader(const std::string& fileName, const std::string& ver, const std::initializer_list<std::string>& func, const std::string& entry = "");
 	// デストラクタ
 	~Shader();
 

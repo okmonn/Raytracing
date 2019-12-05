@@ -4,7 +4,7 @@
 #include <d3d12.h>
 
 // コンストラクタ
-Shader::Shader(const std::string& fileName, const std::string& entry, const std::string& ver, const std::initializer_list<std::string>& func) :
+Shader::Shader(const std::string& fileName, const std::string& ver, const std::initializer_list<std::string>& func, const std::string& entry) :
 	blob(nullptr)
 {
 	DXR::Compile(fileName, entry, ver, &blob);

@@ -26,9 +26,6 @@ const Vec3f triVertex[] = {
 
 int main()
 {
-	Shader shader("DXR/Shader/RayGeneration.hlsl", "main", "lib_6_3", { "RayGen", "Miss", "Chs" });
-	Root rayGen(&shader);
-
 	Window win(Vec2(640, 480));
 	Queue queue(DXR::CommandType::DIRECT);
 	Allocator allo(DXR::CommandType::DIRECT);
@@ -49,14 +46,14 @@ int main()
 	queue.Execution(tmp);
 	fence.Wait();
 
-	//Shader shader("DXR/Shader/RayGeneration.hlsl", "main", "lib_6_3", { "RayGen", "Miss", "Chs" });
+	Shader shader("DXR/Shader/RayGeneration.hlsl", "lib_6_3", { "RayGen", "Miss", "Chs" });
 	
 	Hit hit("hit", "Chs");
 	
-	//Root rayGen(&shader);
+	Root rayGen(Root::RayGenDesc());
 	Association rayAsso(&rayGen, { "RayGen" });
 
-	Root miss(nullptr);
+	Root miss(Root::MissDesc());
 	Association missAsso(&miss, { "Miss" });
 
 	ShaderConfig sConfig(sizeof(bool));

@@ -38,13 +38,6 @@ const wchar_t** DXR::ChangeCode(const char** str, const size_t& num)
 	return tmp.data();
 }
 
-#include "../Device/Device.h"
-#include <d3d12.h>
-#define DXIL_FOURCC(ch0, ch1, ch2, ch3) (                            \
-  (uint32_t)(uint8_t)(ch0)        | (uint32_t)(uint8_t)(ch1) << 8  | \
-  (uint32_t)(uint8_t)(ch2) << 16  | (uint32_t)(uint8_t)(ch3) << 24   \
-  )
-
 // シェーダのコンパイル
 void DXR::Compile(const std::string& fileName, const std::string& entry, const std::string& ver, ID3DBlob** blob)
 {
@@ -72,20 +65,6 @@ void DXR::Compile(const std::string& fileName, const std::string& entry, const s
 	if (SUCCEEDED(hr))
 	{
 		hr = result->GetResult((IDxcBlob**)&(*blob));
-		_ASSERT(hr == S_OK);
-		
-		IDxcContainerReflection* ref = nullptr;
-		hr = DxcCreateInstance(CLSID_DxcContainerReflection, IID_PPV_ARGS(&ref));
-		_ASSERT(hr == S_OK);
-		hr = ref->Load((IDxcBlob*)*blob);
-		_ASSERT(hr == S_OK);
-		UINT32 idx = 0;
-		hr = ref->FindFirstPartKind(DXIL_FOURCC('R', 'T', 'S', '0'), &idx);
-		IDxcBlob* tmp = nullptr;
-		hr = ref->GetPartContent(idx, &tmp);
-		_ASSERT(hr == S_OK);
-		ID3D12RootSignature* root = nullptr;
-		hr = Device::Get()->CreateRootSignature(0, tmp->GetBufferPointer(), tmp->GetBufferSize(), IID_PPV_ARGS(&tmp));
 		_ASSERT(hr == S_OK);
 	}
 	else
