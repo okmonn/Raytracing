@@ -2,7 +2,6 @@
 #include "Infomation.hlsli"
 
 // レイジェネレーション
-[RootSignature(RS)]
 [shader("raygeneration")]
 void RayGen()
 {

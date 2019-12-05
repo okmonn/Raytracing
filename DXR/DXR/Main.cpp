@@ -26,7 +26,7 @@ const Vec3f triVertex[] = {
 
 int main()
 {
-	Shader shader("DXR/Shader/RayGeneration.hlsl", "", "lib_6_3", { "RayGen", "Miss", "Chs" });
+	Shader shader("DXR/Shader/RayGeneration.hlsl", "main", "lib_6_3", { "RayGen", "Miss", "Chs" });
 	Root rayGen(&shader);
 
 	Window win(Vec2(640, 480));
