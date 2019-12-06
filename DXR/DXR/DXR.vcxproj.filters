@@ -76,6 +76,9 @@
     <Filter Include="Pipeline">
       <UniqueIdentifier>{5542baf1-044f-4080-bdb9-fa04a0371e1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\Miss">
+      <UniqueIdentifier>{fc50892b-2be6-45a6-be78-faf559aef567}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -214,13 +217,22 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DXR\Shader\Infomation.hlsli">
+    <None Include="DXR\Shader\RayGeneration.hlsli">
       <Filter>リソース ファイル\RayGeneration</Filter>
+    </None>
+    <None Include="DXR\Shader\Miss.hlsli">
+      <Filter>リソース ファイル\Miss</Filter>
+    </None>
+    <None Include="DXR\Shader\Infomation.hlsli">
+      <Filter>リソース ファイル</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DXR\Shader\RayGeneration.hlsl">
       <Filter>リソース ファイル\RayGeneration</Filter>
+    </FxCompile>
+    <FxCompile Include="DXR\Shader\Miss.hlsl">
+      <Filter>リソース ファイル\Miss</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

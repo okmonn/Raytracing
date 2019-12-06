@@ -12,6 +12,7 @@ public:
 	/*コンストラクタ
 	ローカルルートシグネチャ*/
 	Root(const D3D12_ROOT_SIGNATURE_DESC& desc);
+	Root(const Shader* shader);
 	/*コンストラクタ
 	グローバルルートシグネチャ*/
 	Root();
@@ -30,6 +31,7 @@ public:
 private:
 	// ローカルルートシグネチャの生成
 	void CreateLocal(const D3D12_ROOT_SIGNATURE_DESC& desc);
+	void CreateLocal(const Shader* shader);
 
 	// グローバルルートシグネチャの生成
 	void CreateGlobal(void);

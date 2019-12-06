@@ -13,6 +13,13 @@ Root::Root(const D3D12_ROOT_SIGNATURE_DESC& desc) :
 }
 
 // コンストラクタ
+Root::Root(const Shader* shader) : 
+	root(nullptr)
+{
+	CreateLocal(shader);
+}
+
+// コンストラクタ
 Root::Root() : 
 	root(nullptr)
 {
@@ -81,6 +88,13 @@ void Root::CreateLocal(const D3D12_ROOT_SIGNATURE_DESC& desc)
 
 	(*sub).pDesc = &root;
 	(*sub).Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+}
+
+// ローカルルートシグネチャの生成
+void Root::CreateLocal(const Shader* shader)
+{
+	auto hr = Device::Get()->CreateRootSignature(0, shader->Get()->GetBufferPointer(), shader->Get()->GetBufferSize(), IID_PPV_ARGS(&root));
+	_ASSERT(hr == S_OK);
 }
 
 // グローバルルートシグネチャの生成

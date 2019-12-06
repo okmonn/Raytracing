@@ -1,3 +1,4 @@
+#include "RayGeneration.hlsli"
 #include "Infomation.hlsli"
 
 // TLASのリソースビュー
@@ -13,12 +14,7 @@ void RayGen()
     outputTexture[index.xy] = 1.0f;
 }
 
-// ミス
-[shader("miss")]
-void Miss(inout Payload payload)
-{
-    payload.hit = false;
-}
+
 
 // クローゼストヒット
 [shader("closesthit")]

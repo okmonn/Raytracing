@@ -26,6 +26,10 @@ const Vec3f triVertex[] = {
 
 int main()
 {
+	Shader Ray("DXR/Shader/RayGeneration.hlsl", "lib_6_3", { "local", "association", "RayGen" });
+	Root a(&Ray);
+	Shader Miss("DXR/Shader/Miss.hlsl", "lib_6_3", { "local", "association", "Miss" });
+
 	Window win(Vec2(640, 480));
 	Queue queue(DXR::CommandType::DIRECT);
 	Allocator allo(DXR::CommandType::DIRECT);
@@ -46,7 +50,7 @@ int main()
 	queue.Execution(tmp);
 	fence.Wait();
 
-	Shader shader("DXR/Shader/RayGeneration.hlsl", "lib_6_3", { "RayGen", "Miss", "Chs" });
+	
 	
 	Hit hit("hit", "Chs");
 	
@@ -63,7 +67,7 @@ int main()
 	
 	Root global;
 
-	Pipe pipe({&shader, &hit, &rayGen, &rayAsso, &miss, &missAsso, &sConfig, &configAsso, &pConfig, &global});
+	//Pipe pipe({&shader, &hit, &rayGen, &rayAsso, &miss, &missAsso, &sConfig, &configAsso, &pConfig, &global});
 	
 	while (Window::CheckMsg())
 	{
