@@ -1,7 +1,6 @@
 #pragma once
 #include "../SubObj.h"
 
-struct D3D12_ROOT_SIGNATURE_DESC;
 struct ID3D12RootSignature;
 class Shader;
 
@@ -9,32 +8,17 @@ class Root :
 	public SubObj
 {
 public:
-	/*コンストラクタ
-	ローカルルートシグネチャ*/
-	Root(const D3D12_ROOT_SIGNATURE_DESC& desc);
+	// コンストラクタ
 	Root(const Shader* shader);
-	/*コンストラクタ
-	グローバルルートシグネチャ*/
-	Root();
 	// デストラクタ
 	~Root();
-
-	// レイジェネレーション用構造体の取得
-	static D3D12_ROOT_SIGNATURE_DESC RayGenDesc(void);
-
-	// ミス用構造体の取得
-	static D3D12_ROOT_SIGNATURE_DESC MissDesc(void);
 
 	// ルートシグネチャの取得
 	ID3D12RootSignature* Get(void) const;
 
 private:
-	// ローカルルートシグネチャの生成
-	void CreateLocal(const D3D12_ROOT_SIGNATURE_DESC& desc);
-	void CreateLocal(const Shader* shader);
-
-	// グローバルルートシグネチャの生成
-	void CreateGlobal(void);
+	// ルートシグネチャの生成
+	void CreateRoot(const Shader* shader);
 
 
 	// ルートシグネチャ

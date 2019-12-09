@@ -5,7 +5,7 @@
 
 // コンストラクタ
 Shader::Shader(const std::string& fileName, const std::string& ver, const std::initializer_list<std::string>& func, const std::string& entry) :
-	blob(nullptr)
+	blob(nullptr), num(func.size())
 {
 	DXR::Compile(fileName, entry, ver, &blob);
 	CreateSub(func);
@@ -24,7 +24,7 @@ Shader::~Shader()
 // サブオブジェクトの生成
 void Shader::CreateSub(const std::initializer_list<std::string>& func)
 {
-	D3D12_DXIL_LIBRARY_DESC lib{};
+	static D3D12_DXIL_LIBRARY_DESC lib{};
 
 	(*sub).pDesc = &lib;
 	(*sub).Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
@@ -53,4 +53,10 @@ void Shader::CreateSub(const std::initializer_list<std::string>& func)
 ID3DBlob* Shader::Get(void) const
 {
 	return blob;
+}
+
+// コレクション数の取得
+size_t Shader::Num(void) const
+{
+	return num;
 }

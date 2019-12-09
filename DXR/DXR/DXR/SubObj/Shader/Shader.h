@@ -17,6 +17,9 @@ public:
 	// シェーダブロブの取得
 	ID3DBlob* Get(void) const;
 
+	// コレクション数の取得
+	size_t Num(void) const;
+
 private:
 	// サブオブジェクトの生成
 	void CreateSub(const std::initializer_list<std::string>& func);
@@ -24,4 +27,7 @@ private:
 
 	// シェーダブロブ
 	ID3DBlob* blob;
+
+	// コレクション数
+	size_t num;
 };

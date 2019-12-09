@@ -1,8 +1,3 @@
-GlobalRootSignature global =
-{
-    " "
-};
-
 // ローカルルートシグネチャ
 LocalRootSignature local =
 {
@@ -15,17 +10,4 @@ SubobjectToExportsAssociation association =
 {
     "local",//サブオブジェクト名
     "RayGen"//エクスポート関数
-};
-
-// シェーダコンフィグ
-RaytracingShaderConfig sConfig =
-{
-    16,//ペイロードサイズ
-    8//アトリビュートサイズ
-};
-
-// パイプラインコンフィグ
-RaytracingPipelineConfig pConfig =
-{
-    0//深度の深さ
 };

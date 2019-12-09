@@ -58,9 +58,6 @@
     <Filter Include="SubObject\Shader">
       <UniqueIdentifier>{658520e4-f07e-4c1d-9be6-8c7231586de8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SubObject\RootSignature">
-      <UniqueIdentifier>{f9191494-d34b-4dc9-930c-d3eb782c0a0a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SubObject\HitProgram">
       <UniqueIdentifier>{efed482b-603e-466d-b370-d30ecc056bc0}</UniqueIdentifier>
     </Filter>
@@ -78,6 +75,12 @@
     </Filter>
     <Filter Include="リソース ファイル\Miss">
       <UniqueIdentifier>{fc50892b-2be6-45a6-be78-faf559aef567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\GlobalInfo">
+      <UniqueIdentifier>{005f0bf4-49aa-4bcf-8f1b-56a45fd0e62e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\RootSignature">
+      <UniqueIdentifier>{555fc22b-dcdc-412e-b736-adf1df3ad55e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -126,9 +129,6 @@
     <ClCompile Include="DXR\SubObj\Shader\Shader.cpp">
       <Filter>SubObject\Shader</Filter>
     </ClCompile>
-    <ClCompile Include="DXR\SubObj\Root\Root.cpp">
-      <Filter>SubObject\RootSignature</Filter>
-    </ClCompile>
     <ClCompile Include="DXR\SubObj\Hit\Hit.cpp">
       <Filter>SubObject\HitProgram</Filter>
     </ClCompile>
@@ -143,6 +143,9 @@
     </ClCompile>
     <ClCompile Include="DXR\Pipe\Pipe.cpp">
       <Filter>Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\SubObj\Root\Root.cpp">
+      <Filter>SubObject\RootSignature</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -197,9 +200,6 @@
     <ClInclude Include="DXR\SubObj\Shader\Shader.h">
       <Filter>SubObject\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="DXR\SubObj\Root\Root.h">
-      <Filter>SubObject\RootSignature</Filter>
-    </ClInclude>
     <ClInclude Include="DXR\SubObj\Hit\Hit.h">
       <Filter>SubObject\HitProgram</Filter>
     </ClInclude>
@@ -214,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="DXR\Pipe\Pipe.h">
       <Filter>Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\SubObj\Root\Root.h">
+      <Filter>SubObject\RootSignature</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -233,6 +236,9 @@
     </FxCompile>
     <FxCompile Include="DXR\Shader\Miss.hlsl">
       <Filter>リソース ファイル\Miss</Filter>
+    </FxCompile>
+    <FxCompile Include="DXR\Shader\GlobalInfomation.hlsl">
+      <Filter>リソース ファイル\GlobalInfo</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

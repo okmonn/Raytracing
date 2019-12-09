@@ -14,8 +14,6 @@ void RayGen()
     outputTexture[index.xy] = 1.0f;
 }
 
-
-
 // クローゼストヒット
 [shader("closesthit")]
 void Chs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribute)

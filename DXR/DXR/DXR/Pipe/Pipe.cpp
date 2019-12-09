@@ -1,11 +1,11 @@
 #include "Pipe.h"
 #include "../Device/Device.h"
-#include "../SubObj/SubObj.h"
+#include "../SubObj/Shader/Shader.h"
 #include <vector>
 #include <d3d12.h>
 
 // コンストラクタ
-Pipe::Pipe(const std::initializer_list<SubObj*>& obj) :
+Pipe::Pipe(const std::initializer_list<Shader*>& obj) :
 	pipe(nullptr)
 {
 	CreatePipe(obj);
@@ -22,7 +22,7 @@ Pipe::~Pipe()
 }
 
 // パイプラインの生成
-void Pipe::CreatePipe(const std::initializer_list<SubObj*>& obj)
+void Pipe::CreatePipe(const std::initializer_list<Shader*>& obj)
 {
 	std::vector<D3D12_STATE_SUBOBJECT>sub;
 	for (auto& i : obj)
@@ -31,8 +31,8 @@ void Pipe::CreatePipe(const std::initializer_list<SubObj*>& obj)
 	}
 
 	D3D12_STATE_OBJECT_DESC desc{};
-	desc.NumSubobjects = unsigned int(sub.size());
-	desc.pSubobjects   = sub.data();
+	desc.NumSubobjects = unsigned int((*obj.begin())->Num());
+	desc.pSubobjects   = &(*obj.begin())->Sub();
 	desc.Type          = D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
 
 	auto hr = Device::Get()->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));

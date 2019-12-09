@@ -2,13 +2,13 @@
 #include <initializer_list>
 
 struct ID3D12StateObject;
-class SubObj;
+class Shader;
 
 class Pipe
 {
 public:
 	// コンストラクタ
-	Pipe(const std::initializer_list<SubObj*>& obj);
+	Pipe(const std::initializer_list<Shader*>& obj);
 	// デストラクタ
 	~Pipe();
 
@@ -17,7 +17,7 @@ public:
 
 private:
 	// パイプラインの生成
-	void CreatePipe(const std::initializer_list<SubObj*>& obj);
+	void CreatePipe(const std::initializer_list<Shader*>& obj);
 
 
 	// パイプライン

@@ -8,8 +8,8 @@
 #include "DXR/Descriptor/Render/Render.h"
 #include "DXR/Descriptor/Primitive/Primitive.h"
 #include "DXR/Descriptor/Acceleration/Acceleration.h"
-#include "DXR/SubObj/Root/Root.h"
 #include "DXR/SubObj/Shader/Shader.h"
+#include "DXR/SubObj/Root/Root.h"
 #include "DXR/SubObj/Hit/Hit.h"
 #include "DXR/SubObj/Association/Association.h"
 #include "DXR/SubObj/ShaderConfig/ShaderConfig.h"
@@ -26,8 +26,10 @@ const Vec3f triVertex[] = {
 
 int main()
 {
+	Shader global("DXR/Shader/GlobalInfomation.hlsl", "lib_6_3", { "global", "sConfig", "pConfig" });
+	Root root(&global);
+	Pipe pipe({ &global });
 	Shader Ray("DXR/Shader/RayGeneration.hlsl", "lib_6_3", { "local", "association", "RayGen" });
-	Root a(&Ray);
 	Shader Miss("DXR/Shader/Miss.hlsl", "lib_6_3", { "local", "association", "Miss" });
 
 	Window win(Vec2(640, 480));
@@ -49,25 +51,6 @@ int main()
 	};
 	queue.Execution(tmp);
 	fence.Wait();
-
-	
-	
-	Hit hit("hit", "Chs");
-	
-	Root rayGen(Root::RayGenDesc());
-	Association rayAsso(&rayGen, { "RayGen" });
-
-	Root miss(Root::MissDesc());
-	Association missAsso(&miss, { "Miss" });
-
-	ShaderConfig sConfig(sizeof(bool));
-	Association configAsso(&sConfig, { "RayGen", "Miss" });
-
-	PipeConfig pConfig(0);
-	
-	Root global;
-
-	//Pipe pipe({&shader, &hit, &rayGen, &rayAsso, &miss, &missAsso, &sConfig, &configAsso, &pConfig, &global});
 	
 	while (Window::CheckMsg())
 	{
