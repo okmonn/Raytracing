@@ -31,8 +31,8 @@ void Pipe::CreatePipe(const std::initializer_list<Shader*>& obj)
 	}
 
 	D3D12_STATE_OBJECT_DESC desc{};
-	desc.NumSubobjects = unsigned int((*obj.begin())->Num());
-	desc.pSubobjects   = &(*obj.begin())->Sub();
+	desc.NumSubobjects = unsigned int(obj.size());
+	desc.pSubobjects   = sub.data();
 	desc.Type          = D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
 
 	auto hr = Device::Get()->CreateStateObject(&desc, IID_PPV_ARGS(&pipe));
