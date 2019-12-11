@@ -1,15 +1,13 @@
 #pragma once
-#include "../SubObj.h"
 
 struct ID3D12RootSignature;
-class Shader;
+class SubObj;
 
-class Root :
-	public SubObj
+class Root
 {
 public:
 	// コンストラクタ
-	Root(const Shader* shader);
+	Root(const SubObj* sub);
 	// デストラクタ
 	~Root();
 
@@ -18,7 +16,7 @@ public:
 
 private:
 	// ルートシグネチャの生成
-	void CreateRoot(const Shader* shader);
+	void CreateRoot(const SubObj* sub);
 
 
 	// ルートシグネチャ

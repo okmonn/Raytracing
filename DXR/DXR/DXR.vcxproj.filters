@@ -52,24 +52,6 @@
     <Filter Include="リソース ファイル\RayGeneration">
       <UniqueIdentifier>{4178b343-c9a8-422d-a09a-1e9e7fc14072}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SubObject">
-      <UniqueIdentifier>{a23a2486-4872-4c79-8d30-4bf07ae31776}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SubObject\Shader">
-      <UniqueIdentifier>{658520e4-f07e-4c1d-9be6-8c7231586de8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SubObject\HitProgram">
-      <UniqueIdentifier>{efed482b-603e-466d-b370-d30ecc056bc0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SubObject\Association">
-      <UniqueIdentifier>{53ad8f0a-40c3-4a78-bd35-a7a93b531458}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SubObject\ShaderConfig">
-      <UniqueIdentifier>{0d7d24b3-103f-4952-b99d-1ec550dc7e11}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SubObject\PipeConfig">
-      <UniqueIdentifier>{8ccd8e04-6beb-46ea-bec7-afd9614d0ad6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Pipeline">
       <UniqueIdentifier>{5542baf1-044f-4080-bdb9-fa04a0371e1d}</UniqueIdentifier>
     </Filter>
@@ -79,8 +61,17 @@
     <Filter Include="リソース ファイル\GlobalInfo">
       <UniqueIdentifier>{005f0bf4-49aa-4bcf-8f1b-56a45fd0e62e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="SubObject\RootSignature">
-      <UniqueIdentifier>{555fc22b-dcdc-412e-b736-adf1df3ad55e}</UniqueIdentifier>
+    <Filter Include="SubObject">
+      <UniqueIdentifier>{8ebfeffd-4450-4422-b5a5-177ac8f67955}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Root">
+      <UniqueIdentifier>{ebfb09d5-6046-4418-8c6c-4300216f8466}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\TriangleHit">
+      <UniqueIdentifier>{37202766-b912-4a61-917c-d1cb5ff46edc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Descriptor\ShaderTable">
+      <UniqueIdentifier>{e87a5662-9ffa-4afd-851b-05764214581e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -123,29 +114,17 @@
     <ClCompile Include="DXR\Func\Func.cpp">
       <Filter>Func</Filter>
     </ClCompile>
-    <ClCompile Include="DXR\SubObj\SubObj.cpp">
-      <Filter>SubObject</Filter>
-    </ClCompile>
-    <ClCompile Include="DXR\SubObj\Shader\Shader.cpp">
-      <Filter>SubObject\Shader</Filter>
-    </ClCompile>
-    <ClCompile Include="DXR\SubObj\Hit\Hit.cpp">
-      <Filter>SubObject\HitProgram</Filter>
-    </ClCompile>
-    <ClCompile Include="DXR\SubObj\Association\Association.cpp">
-      <Filter>SubObject\Association</Filter>
-    </ClCompile>
-    <ClCompile Include="DXR\SubObj\ShaderConfig\ShaderConfig.cpp">
-      <Filter>SubObject\ShaderConfig</Filter>
-    </ClCompile>
-    <ClCompile Include="DXR\SubObj\PipeConfig\PipeConfig.cpp">
-      <Filter>SubObject\PipeConfig</Filter>
-    </ClCompile>
     <ClCompile Include="DXR\Pipe\Pipe.cpp">
       <Filter>Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="DXR\SubObj\Root\Root.cpp">
-      <Filter>SubObject\RootSignature</Filter>
+    <ClCompile Include="DXR\SubObj\SubObj.cpp">
+      <Filter>SubObject</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Root\Root.cpp">
+      <Filter>Root</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Descriptor\ShaderTbl\ShaderTbl.cpp">
+      <Filter>Descriptor\ShaderTable</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -194,51 +173,45 @@
     <ClInclude Include="DXR\Func\Func.h">
       <Filter>Func</Filter>
     </ClInclude>
-    <ClInclude Include="DXR\SubObj\SubObj.h">
-      <Filter>SubObject</Filter>
-    </ClInclude>
-    <ClInclude Include="DXR\SubObj\Shader\Shader.h">
-      <Filter>SubObject\Shader</Filter>
-    </ClInclude>
-    <ClInclude Include="DXR\SubObj\Hit\Hit.h">
-      <Filter>SubObject\HitProgram</Filter>
-    </ClInclude>
-    <ClInclude Include="DXR\SubObj\Association\Association.h">
-      <Filter>SubObject\Association</Filter>
-    </ClInclude>
-    <ClInclude Include="DXR\SubObj\ShaderConfig\ShaderConfig.h">
-      <Filter>SubObject\ShaderConfig</Filter>
-    </ClInclude>
-    <ClInclude Include="DXR\SubObj\PipeConfig\PipeConfig.h">
-      <Filter>SubObject\PipeConfig</Filter>
-    </ClInclude>
     <ClInclude Include="DXR\Pipe\Pipe.h">
       <Filter>Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="DXR\SubObj\Root\Root.h">
-      <Filter>SubObject\RootSignature</Filter>
+    <ClInclude Include="DXR\SubObj\SubObj.h">
+      <Filter>SubObject</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Root\Root.h">
+      <Filter>Root</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Descriptor\ShaderTbl\ShaderTbl.h">
+      <Filter>Descriptor\ShaderTable</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DXR\Shader\RayGeneration.hlsli">
-      <Filter>リソース ファイル\RayGeneration</Filter>
-    </None>
     <None Include="DXR\Shader\Miss.hlsli">
       <Filter>リソース ファイル\Miss</Filter>
     </None>
     <None Include="DXR\Shader\Infomation.hlsli">
       <Filter>リソース ファイル</Filter>
     </None>
+    <None Include="DXR\Shader\RayGen.hlsli">
+      <Filter>リソース ファイル\RayGeneration</Filter>
+    </None>
+    <None Include="DXR\Shader\TriangleHit.hlsli">
+      <Filter>リソース ファイル\TriangleHit</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="DXR\Shader\RayGeneration.hlsl">
-      <Filter>リソース ファイル\RayGeneration</Filter>
-    </FxCompile>
     <FxCompile Include="DXR\Shader\Miss.hlsl">
       <Filter>リソース ファイル\Miss</Filter>
     </FxCompile>
-    <FxCompile Include="DXR\Shader\GlobalInfomation.hlsl">
+    <FxCompile Include="DXR\Shader\GlobalInfo.hlsl">
       <Filter>リソース ファイル\GlobalInfo</Filter>
+    </FxCompile>
+    <FxCompile Include="DXR\Shader\RayGen.hlsl">
+      <Filter>リソース ファイル\RayGeneration</Filter>
+    </FxCompile>
+    <FxCompile Include="DXR\Shader\TriangleHit.hlsl">
+      <Filter>リソース ファイル\TriangleHit</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

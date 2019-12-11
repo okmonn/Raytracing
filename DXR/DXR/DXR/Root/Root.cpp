@@ -1,13 +1,13 @@
 #include "Root.h"
-#include "../../Device/Device.h"
-#include "../Shader/Shader.h"
+#include "../Device/Device.h"
+#include "../SubObj/SubObj.h"
 #include <d3d12.h>
 
 // コンストラクタ
-Root::Root(const Shader* shader) : 
+Root::Root(const SubObj* sub) : 
 	root(nullptr)
 {
-	CreateRoot(shader);
+	CreateRoot(sub);
 }
 
 // デストラクタ
@@ -21,9 +21,9 @@ Root::~Root()
 }
 
 // ルートシグネチャの生成
-void Root::CreateRoot(const Shader* shader)
+void Root::CreateRoot(const SubObj* sub)
 {
-	auto hr = Device::Get()->CreateRootSignature(0, shader->Get()->GetBufferPointer(), shader->Get()->GetBufferSize(), IID_PPV_ARGS(&root));
+	auto hr = Device::Get()->CreateRootSignature(0, sub->Blob()->GetBufferPointer(), sub->Blob()->GetBufferSize(), IID_PPV_ARGS(&root));
 	_ASSERT(hr == S_OK);
 }
 

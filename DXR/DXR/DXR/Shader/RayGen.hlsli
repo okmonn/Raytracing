@@ -8,6 +8,6 @@ LocalRootSignature local =
 // アソシエーション
 SubobjectToExportsAssociation association =
 {
-    "local",//サブオブジェクト名
+    "local", //サブオブジェクト名
     "RayGen"//エクスポート関数
 };

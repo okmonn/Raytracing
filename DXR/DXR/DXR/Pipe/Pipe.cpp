@@ -1,11 +1,11 @@
 #include "Pipe.h"
 #include "../Device/Device.h"
-#include "../SubObj/Shader/Shader.h"
+#include "../SubObj/SubObj.h"
 #include <vector>
 #include <d3d12.h>
 
 // コンストラクタ
-Pipe::Pipe(const std::initializer_list<Shader*>& obj) :
+Pipe::Pipe(const std::initializer_list<SubObj*>& obj) :
 	pipe(nullptr)
 {
 	CreatePipe(obj);
@@ -22,12 +22,12 @@ Pipe::~Pipe()
 }
 
 // パイプラインの生成
-void Pipe::CreatePipe(const std::initializer_list<Shader*>& obj)
+void Pipe::CreatePipe(const std::initializer_list<SubObj*>& obj)
 {
 	std::vector<D3D12_STATE_SUBOBJECT>sub;
 	for (auto& i : obj)
 	{
-		sub.push_back(i->Sub());
+		sub.push_back(i->Get());
 	}
 
 	D3D12_STATE_OBJECT_DESC desc{};

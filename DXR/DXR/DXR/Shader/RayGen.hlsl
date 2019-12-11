@@ -1,4 +1,4 @@
-#include "RayGeneration.hlsli"
+#include "RayGen.hlsli"
 #include "Infomation.hlsli"
 
 // TLASのリソースビュー
@@ -13,11 +13,3 @@ void RayGen()
     uint3 index = DispatchRaysIndex();
     outputTexture[index.xy] = 1.0f;
 }
-
-// クローゼストヒット
-[shader("closesthit")]
-void Chs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribute)
-{
-    payload.hit = true;
-}
-

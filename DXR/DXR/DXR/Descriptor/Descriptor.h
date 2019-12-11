@@ -17,7 +17,7 @@ public:
 	ID3D12DescriptorHeap* Heap(void) const;
 
 	// リソースの取得
-	ID3D12Resource* Rsc(const size_t& index) const;
+	ID3D12Resource* Rsc(const size_t& index = 0) const;
 
 	// リソースの取得
 	std::vector<ID3D12Resource*>Rsc(void) const;

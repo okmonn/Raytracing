@@ -8,12 +8,8 @@
 #include "DXR/Descriptor/Render/Render.h"
 #include "DXR/Descriptor/Primitive/Primitive.h"
 #include "DXR/Descriptor/Acceleration/Acceleration.h"
-#include "DXR/SubObj/Shader/Shader.h"
-#include "DXR/SubObj/Root/Root.h"
-#include "DXR/SubObj/Hit/Hit.h"
-#include "DXR/SubObj/Association/Association.h"
-#include "DXR/SubObj/ShaderConfig/ShaderConfig.h"
-#include "DXR/SubObj/PipeConfig/PipeConfig.h"
+#include "DXR/SubObj/SubObj.h"
+#include "DXR/Root/Root.h"
 #include "DXR/Pipe/Pipe.h"
 #include <d3d12.h>
 
@@ -26,11 +22,9 @@ const Vec3f triVertex[] = {
 
 int main()
 {
-	Shader global("DXR/Shader/GlobalInfomation.hlsl", "lib_6_3", { "global", "sConfig", "pConfig" });
+	SubObj global("DXR/Shader/GlobalInfo.hlsl", "lib_6_3", { "global", "sConfig", "pConfig" });
 	Root root(&global);
 	Pipe pipe({ &global });
-	Shader Ray("DXR/Shader/RayGeneration.hlsl", "lib_6_3", { "local", "association", "RayGen" });
-	Shader Miss("DXR/Shader/Miss.hlsl", "lib_6_3", { "local", "association", "Miss" });
 
 	Window win(Vec2(640, 480));
 	Queue queue(DXR::CommandType::DIRECT);
