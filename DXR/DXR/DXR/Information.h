@@ -10,4 +10,12 @@ namespace DXR
 		COMPUTE,
 		COPY
 	};
+
+	// シェーダタイプ
+	enum class ShaderType
+	{
+		RAYGEN,
+		MISS,
+		CLOSEST
+	};
 }

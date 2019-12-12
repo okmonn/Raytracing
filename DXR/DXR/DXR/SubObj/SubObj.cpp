@@ -4,7 +4,7 @@
 
 // コンストラクタ
 SubObj::SubObj(const std::string& fileName, const std::string& ver, const std::initializer_list<std::string>& func, const std::string& entry) :
-	sub(std::make_unique<D3D12_STATE_SUBOBJECT>()), blob(nullptr)
+	lib(std::make_unique<D3D12_DXIL_LIBRARY_DESC>()), sub(std::make_unique<D3D12_STATE_SUBOBJECT>()), blob(nullptr)
 {
 	DXR::Compile(fileName, entry, ver, &blob);
 	SetSubObj(func);
@@ -34,13 +34,12 @@ void SubObj::SetSubObj(const std::initializer_list<std::string>& func)
 		++index;
 	}
 
-	D3D12_DXIL_LIBRARY_DESC desc{};
-	desc.DXILLibrary.BytecodeLength  = blob->GetBufferSize();
-	desc.DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
-	desc.NumExports                  = unsigned int(func.size());
-	desc.pExports                    = expo.data();
+	(*lib).DXILLibrary.BytecodeLength  = blob->GetBufferSize();
+	(*lib).DXILLibrary.pShaderBytecode = blob->GetBufferPointer();
+	(*lib).NumExports                  = unsigned int(func.size());
+	(*lib).pExports                    = expo.data();
 
-	(*sub).pDesc = &desc;
+	(*sub).pDesc = &(*lib);
 	(*sub).Type  = D3D12_STATE_SUBOBJECT_TYPE::D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
 }
 

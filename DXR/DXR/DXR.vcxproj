@@ -130,6 +130,7 @@
     <ClCompile Include="DXR\Allocator\Allocator.cpp" />
     <ClCompile Include="DXR\Descriptor\Acceleration\Acceleration.cpp" />
     <ClCompile Include="DXR\Descriptor\Descriptor.cpp" />
+    <ClCompile Include="DXR\Descriptor\Output\Output.cpp" />
     <ClCompile Include="DXR\Descriptor\Primitive\Primitive.cpp" />
     <ClCompile Include="DXR\Descriptor\Render\Render.cpp" />
     <ClCompile Include="DXR\Descriptor\ShaderTbl\ShaderTbl.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="DXR\Allocator\Allocator.h" />
     <ClInclude Include="DXR\Descriptor\Acceleration\Acceleration.h" />
     <ClInclude Include="DXR\Descriptor\Descriptor.h" />
+    <ClInclude Include="DXR\Descriptor\Output\Output.h" />
     <ClInclude Include="DXR\Descriptor\Primitive\Primitive.h" />
     <ClInclude Include="DXR\Descriptor\Render\Render.h" />
     <ClInclude Include="DXR\Descriptor\ShaderTbl\ShaderTbl.h" />
@@ -204,16 +206,40 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
     </FxCompile>
     <FxCompile Include="DXR\Shader\RayGen.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
     </FxCompile>
     <FxCompile Include="DXR\Shader\TriangleHit.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.3</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.3</ShaderModel>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

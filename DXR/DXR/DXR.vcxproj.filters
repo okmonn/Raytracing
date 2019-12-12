@@ -73,6 +73,9 @@
     <Filter Include="Descriptor\ShaderTable">
       <UniqueIdentifier>{e87a5662-9ffa-4afd-851b-05764214581e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Descriptor\Output">
+      <UniqueIdentifier>{63c3a214-02c9-4a09-88e4-f287c17ca2f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -125,6 +128,9 @@
     </ClCompile>
     <ClCompile Include="DXR\Descriptor\ShaderTbl\ShaderTbl.cpp">
       <Filter>Descriptor\ShaderTable</Filter>
+    </ClCompile>
+    <ClCompile Include="DXR\Descriptor\Output\Output.cpp">
+      <Filter>Descriptor\Output</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -184,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="DXR\Descriptor\ShaderTbl\ShaderTbl.h">
       <Filter>Descriptor\ShaderTable</Filter>
+    </ClInclude>
+    <ClInclude Include="DXR\Descriptor\Output\Output.h">
+      <Filter>Descriptor\Output</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

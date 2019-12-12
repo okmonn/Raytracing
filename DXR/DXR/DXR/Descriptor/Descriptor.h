@@ -19,9 +19,6 @@ public:
 	// リソースの取得
 	ID3D12Resource* Rsc(const size_t& index = 0) const;
 
-	// リソースの取得
-	std::vector<ID3D12Resource*>Rsc(void) const;
-		
 private:
 
 protected:

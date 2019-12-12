@@ -103,9 +103,3 @@ ID3D12Resource* Descriptor::Rsc(const size_t& index) const
 {
 	return rsc[index];
 }
-
-// ƒŠƒ\[ƒX‚Ìæ“¾
-std::vector<ID3D12Resource*> Descriptor::Rsc(void) const
-{
-	return rsc;
-}

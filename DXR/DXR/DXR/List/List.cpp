@@ -1,6 +1,8 @@
 #include "List.h"
 #include "../Device/Device.h"
 #include "../Allocator/Allocator.h"
+#include "../Root/Root.h"
+#include "../Pipe/Pipe.h"
 #include <d3d12.h>
 #include <crtdbg.h>
 
@@ -35,6 +37,19 @@ void List::Close(void) const
 	_ASSERT(hr == S_OK);
 }
 
+// バリア
+void List::Barrier(ID3D12Resource* rsc, const D3D12_RESOURCE_STATES& befor, const D3D12_RESOURCE_STATES& after) const
+{
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Transition.pResource   = rsc;
+	barrier.Transition.StateAfter  = after;
+	barrier.Transition.StateBefore = befor;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+
+	list->ResourceBarrier(1, &barrier);
+}
+
 // UAVバリア
 void List::Barrier(ID3D12Resource* rsc) const
 {
@@ -43,6 +58,18 @@ void List::Barrier(ID3D12Resource* rsc) const
 	barrier.UAV.pResource = rsc;
 
 	list->ResourceBarrier(1, &barrier);
+}
+
+// ルートシグネチャのセット
+void List::SetRoot(const Root* root)
+{
+	list->SetComputeRootSignature(root->Get());
+}
+
+// パイプラインのセット
+void List::SetPipe(const Pipe* pipe)
+{
+	list->SetPipelineState1(pipe->Get());
 }
 
 // コマンドリストの生成

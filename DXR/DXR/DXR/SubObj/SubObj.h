@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 
+struct D3D12_DXIL_LIBRARY_DESC;
 struct D3D12_STATE_SUBOBJECT;
 struct ID3D10Blob;
 using ID3DBlob = ID3D10Blob;
@@ -25,6 +26,9 @@ private:
 	// サブオブジェクトの設定
 	void SetSubObj(const std::initializer_list<std::string>& func);
 
+
+	// DXILライブラリ
+	std::unique_ptr<D3D12_DXIL_LIBRARY_DESC>lib;
 
 	// サブオブジェクト
 	std::unique_ptr<D3D12_STATE_SUBOBJECT>sub;
