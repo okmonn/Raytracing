@@ -10,8 +10,7 @@
 #define TOP_RSC_NUM 3
 
 // コンストラクタ
-Acceleration::Acceleration(const List* list, const Primitive* prim) : list(list), prim(prim),
-	buf(nullptr)
+Acceleration::Acceleration(const List* list, const Primitive* prim) : list(list), prim(prim)
 {
 	rsc.resize(BOTTOM_RSC_NUM);
 
@@ -20,7 +19,7 @@ Acceleration::Acceleration(const List* list, const Primitive* prim) : list(list)
 
 // コンストラクタ
 Acceleration::Acceleration(const List* list, const Acceleration* bottom, const size_t& bottomNum) : list(list),
-	prim(nullptr), buf(nullptr)
+	prim(nullptr)
 {
 	rsc.resize(TOP_RSC_NUM);
 
@@ -30,7 +29,6 @@ Acceleration::Acceleration(const List* list, const Acceleration* bottom, const s
 // デストラクタ
 Acceleration::~Acceleration()
 {
-	UnMap(rsc.size() - 1);
 }
 
 // ボトムレベルの生成
@@ -97,8 +95,7 @@ void Acceleration::CreateTop(const Acceleration* bottom, const size_t& bottomNum
 	desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * instanceNum;
 
 	size_t index = rsc.size() - 1;
-	CreateRsc(UploadProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, index);
-	Map((void**)&buf, index--);
+	CreateRsc(UploadProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, index--);
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
 	input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
@@ -137,6 +134,9 @@ void Acceleration::UpData(const size_t& rayNum)
 {
 	list->Barrier(Result());
 
+	D3D12_RAYTRACING_INSTANCE_DESC* buf = nullptr;
+	Map((void**)&buf, rsc.size() - 1);
+
 	size_t instanceNum = 0;
 	for (size_t i = 0; i < bottom.size(); ++i)
 	{
@@ -154,6 +154,7 @@ void Acceleration::UpData(const size_t& rayNum)
 
 		instanceNum += bottom[i]->prim->InstanceNum();
 	}
+	UnMap(rsc.size() - 1);
 
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
 	input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;

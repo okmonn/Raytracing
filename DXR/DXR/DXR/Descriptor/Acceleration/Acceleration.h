@@ -3,7 +3,6 @@
 #include <vector>
 
 struct D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS;
-struct D3D12_RAYTRACING_INSTANCE_DESC;
 class List;
 class Primitive;
 
@@ -48,9 +47,6 @@ private:
 
 	// プリミティブ
 	const Primitive* prim;
-
-	// バッファ
-	D3D12_RAYTRACING_INSTANCE_DESC* buf;
 
 	// ボトムレベル
 	std::vector<const Acceleration*>bottom;
