@@ -5,6 +5,7 @@
 Primitive::Primitive(const Vec3f* vertex, const size_t& vertexNum, const size_t& instanceNum) : 
 	instanceNum(instanceNum)
 {
+	matrix.resize(instanceNum);
 	CreateVertexRsc(sizeof(vertex[0]) * vertexNum);
 	
 	void* buf = nullptr;

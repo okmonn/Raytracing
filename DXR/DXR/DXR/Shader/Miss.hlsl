@@ -1,5 +1,6 @@
 #include "Miss.hlsli"
 #include "Infomation.hlsli"
+#include "GlobalInfo.hlsl"
 
 // É~ÉX
 [shader("miss")]

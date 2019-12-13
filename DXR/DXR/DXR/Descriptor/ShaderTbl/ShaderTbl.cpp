@@ -7,7 +7,7 @@
 
 // コンストラクタ
 ShaderTbl::ShaderTbl(const Pipe* pipe) : 
-	pipe(nullptr)
+	pipe(pipe)
 {
 }
 

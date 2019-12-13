@@ -1,9 +1,10 @@
 #include "TriangleHit.hlsli"
 #include "Infomation.hlsli"
+#include "GlobalInfo.hlsl"
 
 // クローゼストヒット
 [shader("closesthit")]
-void TriangleHit(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribute)
+void TriangleChs(inout Payload payload, in BuiltInTriangleIntersectionAttributes attribute)
 {
     float3 barycentrics = float3(1.0 - attribute.barycentrics.x - attribute.barycentrics.y, attribute.barycentrics.x, attribute.barycentrics.y);
 

@@ -32,5 +32,5 @@ private:
 
 
 	// ƒpƒCƒv
-	Pipe* pipe;
+	const Pipe* pipe;
 };

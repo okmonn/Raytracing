@@ -1,5 +1,6 @@
 #include "RayGen.hlsli"
 #include "Infomation.hlsli"
+#include "GlobalInfo.hlsl"
 
 // TLASのリソースビュー
 RaytracingAccelerationStructure scene : register(t0);
@@ -24,10 +25,10 @@ void RayGen()
     desc.Origin    = float3(0, 0, -2);
     desc.Direction = normalize(float3(d.x * aspect, -d.y, 1));
     desc.TMin      = 0;
-    desc.TMax      = 100000;
+	desc.TMax      = 100000;
     
     Payload payload;
     TraceRay(scene, 0, 0xff, 0, 0, 0, desc, payload);
     
-    outputTexture[index.xy] = 1.0f;
+	outputTexture[index.xy] = float4(payload.color, 1.0f);
 }

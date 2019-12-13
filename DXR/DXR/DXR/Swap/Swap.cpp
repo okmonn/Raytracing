@@ -51,7 +51,7 @@ void Swap::CreateSwap(const Window* win, const Queue* queue, const size_t& buffe
 // ‰æ–Ê‚ÌXV
 void Swap::Present(const unsigned int& sync, const unsigned int& flag)
 {
-	auto hr = swap->Present1(sync, flag, nullptr);
+	auto hr = swap->Present(sync, flag);
 	_ASSERT(hr == S_OK);
 }
 

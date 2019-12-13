@@ -23,13 +23,16 @@ SubObj::~SubObj()
 // サブオブジェクトの設定
 void SubObj::SetSubObj(const std::initializer_list<std::string>& func)
 {
-	std::vector<D3D12_EXPORT_DESC>expo(func.size());
+	name.resize(func.size());
+	expo.resize(func.size());
 	unsigned int index = 0;
 	for (auto& i : func)
 	{
+		name[index] = DXR::ChangeCode(i);
+
 		expo[index].ExportToRename = nullptr;
 		expo[index].Flags          = D3D12_EXPORT_FLAGS::D3D12_EXPORT_FLAG_NONE;
-		expo[index].Name           = DXR::ChangeCode(i).data();
+		expo[index].Name           = name[index].data();
 
 		++index;
 	}

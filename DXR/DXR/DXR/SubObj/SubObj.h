@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 
+struct D3D12_EXPORT_DESC;
 struct D3D12_DXIL_LIBRARY_DESC;
 struct D3D12_STATE_SUBOBJECT;
 struct ID3D10Blob;
@@ -26,6 +27,12 @@ private:
 	// サブオブジェクトの設定
 	void SetSubObj(const std::initializer_list<std::string>& func);
 
+
+	// エクスポート名
+	std::vector<std::wstring>name;
+
+	// エクスポート情報
+	std::vector<D3D12_EXPORT_DESC>expo;
 
 	// DXILライブラリ
 	std::unique_ptr<D3D12_DXIL_LIBRARY_DESC>lib;

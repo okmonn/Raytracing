@@ -17,7 +17,7 @@
 #define WINSIZE_Y 480
 
 // バックバッファーカウント
-#define BACK_BUFFER 3
+#define BACK_BUFFER 2
 
 // 床のインスタンス数
 #define PLANE_INSTANCE 1

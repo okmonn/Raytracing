@@ -43,10 +43,10 @@ int main()
 
 	Output output(&win, &top);
 
-	SubObj global("DXR/Shader/GlobalInfo.hlsl", "lib_6_3", { "global", "sConfig", "pConfig" });
-	SubObj raygen("DXR/Shader/RayGen.hlsl", "lib_6_3", { "local", "association", "RayGen" });
-	SubObj miss("DXR/Shader/Miss.hlsl", "lib_6_3", { "local", "association", "Miss" });
-	SubObj hit("DXR/Shader/TriangleHit.hlsl", "lib_6_3", { "local", "hit", "association", "TriangleHit" });
+	SubObj global("DXR/Shader/GlobalInfo.hlsl", "lib_6_3", { "global", "sConfig", "pConfig", "globalState" });
+	SubObj raygen("DXR/Shader/RayGen.hlsl", "lib_6_3", { "rayGenLocal", "rayGenAsso", "RayGen", "rayGenState", "sConfig", "pConfig" });
+	SubObj miss("DXR/Shader/Miss.hlsl", "lib_6_3", { "missLocal", "missAsso", "Miss", "missState", "sConfig", "pConfig" });
+	SubObj hit("DXR/Shader/TriangleHit.hlsl", "lib_6_3", { "triangleHitLocal", "triangleHit", "triangleAsso", "triHitState", "TriangleChs", "sConfig", "pConfig" });
 	Root root(&global);
 	Pipe pipe({ &global, &raygen, &miss, &hit });
 
@@ -55,8 +55,8 @@ int main()
 	ShaderTbl missTbl(&pipe);
 	missTbl.Miss("Miss");
 	ShaderTbl closest(&pipe);
-	closest.Closest("TriangleHit");
-	
+	closest.Closest("triangleHit");
+
 	while (Window::CheckMsg())
 	{
 		allo.Reset();

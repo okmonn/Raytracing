@@ -1,19 +1,25 @@
 // ローカルルートシグネチャ
-LocalRootSignature local =
+LocalRootSignature triangleHitLocal =
 {
     "CBV(b0)"
 };
 
 // ヒットグループ
-TriangleHitGroup hit =
+TriangleHitGroup triangleHit =
 {
     "",//anyhit
-    "Main"//closesthit
+    "TriangleChs"//closesthit
 };
 
 // アソシエーション
-SubobjectToExportsAssociation association =
+SubobjectToExportsAssociation triangleAsso =
 {
-    "local", //サブオブジェクト名
-    "TriangleHit"//エクスポート関数
+	"triangleHitLocal", //サブオブジェクト名
+    "triangleHit"//エクスポート関数
+};
+
+// 状態構成フラグ
+StateObjectConfig triHitState =
+{
+	STATE_OBJECT_FLAGS_ALLOW_LOCAL_DEPENDENCIES_ON_EXTERNAL_DEFINITONS
 };
