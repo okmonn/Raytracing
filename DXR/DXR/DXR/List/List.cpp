@@ -3,6 +3,8 @@
 #include "../Allocator/Allocator.h"
 #include "../Root/Root.h"
 #include "../Pipe/Pipe.h"
+#include "../Descriptor/Descriptor.h"
+#include <vector>
 #include <d3d12.h>
 #include <crtdbg.h>
 
@@ -70,6 +72,19 @@ void List::SetRoot(const Root* root)
 void List::SetPipe(const Pipe* pipe)
 {
 	list->SetPipelineState1(pipe->Get());
+}
+
+// ディスクリプターヒープのセット
+void List::SetHeap(const Descriptor* descriptor, const size_t& num)
+{
+	std::vector<ID3D12DescriptorHeap*>heap(num);
+	unsigned int index = 0;
+	for (auto& i : heap)
+	{
+		i = descriptor[index++].Heap();
+	}
+
+	list->SetDescriptorHeaps(unsigned int(heap.size()), heap.data());
 }
 
 // コマンドリストの生成

@@ -7,6 +7,7 @@ struct ID3D12Resource;
 class Allocator;
 class Root;
 class Pipe;
+class Descriptor;
 
 class List
 {
@@ -33,6 +34,9 @@ public:
 
 	// パイプラインのセット
 	void SetPipe(const Pipe* pipe);
+
+	// ディスクリプターヒープのセット
+	void SetHeap(const Descriptor* descriptor, const size_t& num);
 
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList5* Get(void) const;

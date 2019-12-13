@@ -1,5 +1,7 @@
 #include "Queue.h"
 #include "../Device/Device.h"
+#include "../List/List.h"
+#include <vector>
 #include <d3d12.h>
 #include <crtdbg.h>
 
@@ -21,9 +23,16 @@ Queue::~Queue()
 }
 
 // コマンドの実行
-void Queue::Execution(ID3D12CommandList* const* list, const size_t& num)
+void Queue::Execution(const List* list, const size_t& num)
 {
-	queue->ExecuteCommandLists(unsigned int(num), list);
+	std::vector<ID3D12CommandList*>tmp(num);
+	unsigned int index = 0;
+	for (auto& i : tmp)
+	{
+		i = list[index].Get();
+	}
+
+	queue->ExecuteCommandLists(unsigned int(tmp.size()), tmp.data());
 }
 
 // コマンドキューの生成

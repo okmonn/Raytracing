@@ -14,5 +14,5 @@ RaytracingShaderConfig sConfig =
 // パイプラインコンフィグ
 RaytracingPipelineConfig pConfig =
 {
-    0 //深度の深さ
+    1 //クローゼストヒットの回数
 };

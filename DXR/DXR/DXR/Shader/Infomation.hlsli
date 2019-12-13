@@ -1,5 +1,5 @@
 // ペイロード
 struct Payload
 {
-    bool hit;
+    float3 color;
 };

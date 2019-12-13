@@ -33,7 +33,4 @@ private:
 
 	// パイプ
 	Pipe* pipe;
-
-	// シェーダエントリーサイズ
-	static size_t size;
 };

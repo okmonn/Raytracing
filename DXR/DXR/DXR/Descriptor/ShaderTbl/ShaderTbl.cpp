@@ -5,8 +5,6 @@
 #include <wrl.h>
 #include <d3d12.h>
 
-size_t ShaderTbl::size = (((D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + 8) + (D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT - 1)) / D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
-
 // コンストラクタ
 ShaderTbl::ShaderTbl(const Pipe* pipe) : 
 	pipe(nullptr)
@@ -30,7 +28,7 @@ void ShaderTbl::CreateRsc(const size_t& num)
 	desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	desc.MipLevels        = 1;
 	desc.SampleDesc       = { 1, 0 };
-	desc.Width            = size * num;
+	desc.Width            = EntrySize() * num;
 
 	Descriptor::CreateRsc(UploadProp(), desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
 }
@@ -90,5 +88,5 @@ void ShaderTbl::Closest(const std::string& name)
 // シェーダエントリーサイズの取得
 size_t ShaderTbl::EntrySize(void)
 {
-	return size;
+	return (((D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + 8) + (D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT - 1)) / D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
 }

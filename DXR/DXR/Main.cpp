@@ -38,10 +38,7 @@ int main()
 	Acceleration bottom(&list, &triangle);
 	Acceleration top(&list, &bottom, 1);
 	list.Close();
-	ID3D12CommandList* tmp[] = {
-		list.Get()
-	};
-	queue.Execution(tmp);
+	queue.Execution(&list, 1);
 	fence.Wait();
 
 	Output output(&win, &top);
@@ -72,9 +69,9 @@ int main()
 
 		list.Barrier(output.Rsc(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		D3D12_DISPATCH_RAYS_DESC desc{};
-		desc.Depth = 1;
+		desc.Depth  = 1;
 		desc.Height = win.WinSize().y;
-		desc.Width = win.WinSize().x;
+		desc.Width  = win.WinSize().x;
 		
 		desc.RayGenerationShaderRecord.SizeInBytes  = ShaderTbl::EntrySize();
 		desc.RayGenerationShaderRecord.StartAddress = rayTbl.Rsc()->GetGPUVirtualAddress();
@@ -86,6 +83,19 @@ int main()
 		desc.HitGroupTable.SizeInBytes   = ShaderTbl::EntrySize();
 		desc.HitGroupTable.StartAddress  = closest.Rsc()->GetGPUVirtualAddress();
 		desc.HitGroupTable.StrideInBytes = ShaderTbl::EntrySize();
+
+		list.SetHeap(&output, 1);
+		list.Get()->DispatchRays(&desc);
+		list.Barrier(output.Rsc(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+		list.Barrier(render.Rsc(swap.Index()), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+		list.Get()->CopyResource(render.Rsc(swap.Index()), output.Rsc());
+		list.Barrier(render.Rsc(swap.Index()), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
+
+		list.Close();
+		queue.Execution(&list, 1);
+		fence.Wait();
+		swap.Present();
 	}
 
 	return 0;

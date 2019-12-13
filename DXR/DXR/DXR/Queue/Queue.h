@@ -3,6 +3,7 @@
 
 struct ID3D12CommandQueue;
 struct ID3D12CommandList;
+class List;
 
 class Queue
 {
@@ -13,7 +14,7 @@ public:
 	~Queue();
 
 	// コマンドの実行
-	void Execution(ID3D12CommandList* const* list, const size_t& num = 1);
+	void Execution(const List* list, const size_t& num);
 
 	// コマンドキューの取得
 	ID3D12CommandQueue* Get(void) const;
