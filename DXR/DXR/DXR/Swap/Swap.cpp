@@ -26,7 +26,7 @@ Swap::~Swap()
 void Swap::CreateSwap(const Window* win, const Queue* queue, const size_t& bufferNum)
 {
 	Microsoft::WRL::ComPtr<IDXGIFactory7>factory = nullptr;
-	auto hr = CreateDXGIFactory(IID_PPV_ARGS(&factory));
+	auto hr = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&factory));
 	_ASSERT(hr == S_OK);
 
 	Vec2 winSize = win->WinSize();
