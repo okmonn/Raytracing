@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Singleton">
+      <UniqueIdentifier>{ac10fd05-1e2c-43a2-b94e-8a933f5cf28e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Format">
+      <UniqueIdentifier>{038046dc-4403-4015-a9a9-3e394aeef82a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Func">
+      <UniqueIdentifier>{0a984fb9-6de3-43b6-9db2-299e697b05a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Singleton\Loader">
+      <UniqueIdentifier>{c112cd4e-a853-4a60-8377-27db6c96cd8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Singleton\ReSample">
+      <UniqueIdentifier>{0b23d9a3-9b55-4468-90c7-343bb7f3fcec}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Func\Func.cpp">
+      <Filter>Func</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Singleton\Loader\Loader.cpp">
+      <Filter>Singleton\Loader</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Singleton\ReSample\ReSample.cpp">
+      <Filter>Singleton\ReSample</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Okdio\Singleton\Singleton.h">
+      <Filter>Singleton</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Unknown.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Format\Wav.h">
+      <Filter>Format</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Info.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Func\Func.h">
+      <Filter>Func</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Singleton\Loader\Loader.h">
+      <Filter>Singleton\Loader</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Singleton\ReSample\ReSample.h">
+      <Filter>Singleton\ReSample</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
