@@ -1,6 +1,7 @@
 #pragma once
 #include "Vector.h"
 #include <cstring>
+#include <DirectXMath.h>
 
 class Matrix3x4
 {
@@ -9,7 +10,7 @@ public:
 
 	// コンストラクタ
 	Matrix3x4() {
-		std::memset(mat, 0, sizeof(mat));
+		Identity();
 	}
 	Matrix3x4(const float& x1, const float& y1, const float& z1, const float& w1,
 			  const float& x2, const float& y2, const float& z2, const float& w2,
@@ -23,6 +24,13 @@ public:
 	}
 	// デストラクタ
 	~Matrix3x4() {
+	}
+
+	// 初期化
+	void Identity(void)
+	{
+		std::memset(mat, 0, sizeof(mat));
+		mat[0][0] = mat[1][1] = mat[2][2] = 1.0f;
 	}
 
 	// 平行移動
