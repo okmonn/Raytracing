@@ -6,7 +6,7 @@
 
 // コンストラクタ
 Fence::Fence(const Queue* queue) : queue(queue),
-	fence(nullptr), handle(CreateEventEx(nullptr, false, false, EVENT_ALL_ACCESS)), cnt(0)
+	fence(nullptr), handle(CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS)), cnt(0)
 {
 	CreateFence();
 }
