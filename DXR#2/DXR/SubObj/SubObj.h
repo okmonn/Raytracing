@@ -12,7 +12,7 @@ public:
 	virtual ~SubObj();
 
 	// サブオブジェクトの取得
-	D3D12_STATE_SUBOBJECT Get(void) const;
+	D3D12_STATE_SUBOBJECT& Get(void) const;
 
 protected:
 	// サブオブジェクト

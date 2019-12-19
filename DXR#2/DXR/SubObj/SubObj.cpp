@@ -13,7 +13,7 @@ SubObj::~SubObj()
 }
 
 // サブオブジェクトの取得
-D3D12_STATE_SUBOBJECT SubObj::Get(void) const
+D3D12_STATE_SUBOBJECT& SubObj::Get(void) const
 {
 	return *sub;
 }

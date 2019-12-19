@@ -63,7 +63,7 @@ void ShaderTbl::RayGeneration(const Output* output, const std::initializer_list<
 
 	std::memcpy(buf + ShaderTbl::EntrySize(), prop->GetShaderIdentifier(L"Miss"), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 
-	std::memcpy(buf + ShaderTbl::EntrySize() * 2, prop->GetShaderIdentifier(L"hit"), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+	std::memcpy(buf + ShaderTbl::EntrySize() * 2, prop->GetShaderIdentifier(L"Hit"), D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
 }
 
 // É~ÉX

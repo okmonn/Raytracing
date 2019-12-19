@@ -48,10 +48,10 @@ int main()
 	   {/*"global", "rayGen", "rayGenAsso", 
 		"miss", "missAsso", 
 		"closest", "hit", "closestAsso",
-		"sConfig", "pConfig",*/ 
+		"sConfig", "pConfig", */
 		"RayGen", "Miss", "Chs"});
 	HitGroup hit("Hit", "Chs");
-	Root rayGenRoot(DXR::RootType::LOCAL, Root::RayGenDesc());
+	static Root rayGenRoot(DXR::RootType::LOCAL, Root::RayGenDesc());
 	Association rayGenAsso(&rayGenRoot, { L"RayGen" });
 	DXR::RootInfo tmp(0, 0);
 	tmp.desc->Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -59,13 +59,13 @@ int main()
 	Association missAsso(&missRoot, { L"Miss" });
 	Root closestRoot(DXR::RootType::LOCAL, tmp);
 	Association closestAsso(&closestRoot, { L"Chs" });
-	ShaderConfig sConfig(16);
-	Association configAsso(&sConfig, { L"RayGen", L"Miss", L"Chs" });
+	ShaderConfig sConfig(sizeof(float) * 3);
+	Association configAsso(&sConfig, { L"RayGen", L"Miss" });
 	PipeConfig pConfig(0);
 	Root global(DXR::RootType::GLOBAL, {});
 
-	Pipe pipe({&shader, &hit, &rayGenRoot, &rayGenAsso, &missRoot, &missAsso, 
-		&closestRoot, &closestAsso, &sConfig, &configAsso, &pConfig, &global});
+	Pipe pipe({&shader, &hit, &rayGenRoot, &rayGenAsso, /*&missRoot, &missAsso, */
+		/*&closestRoot, &closestAsso, */&sConfig, &configAsso, &pConfig, &global});
 
 	Output output(&win, &top);
 
@@ -88,7 +88,7 @@ int main()
 		list.Scissor(&win);*/
 
 		list.SetPipe(&pipe);
-		list.SetRoot(&global);
+		//list.SetRoot(&global);
 
 		list.Barrier(output.Rsc(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		D3D12_DISPATCH_RAYS_DESC desc{};
