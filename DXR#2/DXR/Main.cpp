@@ -47,8 +47,8 @@ int main()
 	ShaderLibrary shader("Shader/test.hlsl", "lib_6_4", 
 	   {/*"global", "rayGen", "rayGenAsso", 
 		"miss", "missAsso", 
-		"closest", "hit", "closestAsso",
-		"sConfig", "pConfig", */
+		"closest", "Hit", "closestAsso",
+		"sConfig", "pConfig",*/ 
 		"RayGen", "Miss", "Chs"});
 	HitGroup hit("Hit", "Chs");
 	static Root rayGenRoot(DXR::RootType::LOCAL, Root::RayGenDesc());
@@ -64,8 +64,8 @@ int main()
 	PipeConfig pConfig(0);
 	Root global(DXR::RootType::GLOBAL, {});
 
-	Pipe pipe({&shader, &hit, &rayGenRoot, &rayGenAsso, /*&missRoot, &missAsso, */
-		/*&closestRoot, &closestAsso, */&sConfig, &configAsso, &pConfig, &global});
+	Pipe pipe({&shader, &hit, &rayGenRoot, &rayGenAsso, /*&missRoot, &missAsso, 
+		&closestRoot, &closestAsso,*/ &sConfig, &configAsso, &pConfig, &global});
 
 	Output output(&win, &top);
 
@@ -88,7 +88,7 @@ int main()
 		list.Scissor(&win);*/
 
 		list.SetPipe(&pipe);
-		//list.SetRoot(&global);
+		list.SetRoot(&global);
 
 		list.Barrier(output.Rsc(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		D3D12_DISPATCH_RAYS_DESC desc{};

@@ -38,7 +38,7 @@ LocalRootSignature closest =
 };
 
 // ヒットグループ
-TriangleHitGroup hit =
+TriangleHitGroup Hit =
 {
 	"", //anyhit
 	"Chs"//closesthit
@@ -48,7 +48,7 @@ TriangleHitGroup hit =
 SubobjectToExportsAssociation closestAsso =
 {
 	"closest", //サブオブジェクト名
-	"hit"//関連付け関数
+	"Hit"//関連付け関数
 };
 
 // シェーダコンフィグ
