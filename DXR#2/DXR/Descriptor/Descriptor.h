@@ -31,10 +31,10 @@ protected:
 	void CreateHeap(const D3D12_DESCRIPTOR_HEAP_TYPE& type, const size_t& rscNum, const bool& shader = false);
 
 	// デフォルトプロパティの取得
-	D3D12_HEAP_PROPERTIES DefaultProp(void);
+	static D3D12_HEAP_PROPERTIES DefaultProp(void);
 
 	// アップロードプロパティの取得
-	D3D12_HEAP_PROPERTIES UploadProp(void);
+	static D3D12_HEAP_PROPERTIES UploadProp(void);
 
 	// リソースの生成
 	void CreateRsc(const D3D12_HEAP_PROPERTIES& prop, const D3D12_RESOURCE_DESC& desc, const D3D12_RESOURCE_STATES& state,

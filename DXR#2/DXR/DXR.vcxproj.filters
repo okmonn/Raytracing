@@ -55,14 +55,29 @@
     <Filter Include="PipeLine">
       <UniqueIdentifier>{038cecc0-620f-4743-8624-efe6353488c0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="RootSignature">
-      <UniqueIdentifier>{5b1974c0-0cbb-4a34-b32b-0b5db60a089b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Descriptor\ShaderTbl">
       <UniqueIdentifier>{0af1bdb5-17f3-450d-b287-39f3d30a7d10}</UniqueIdentifier>
     </Filter>
     <Filter Include="Descriptor\Output">
       <UniqueIdentifier>{698f7260-7c30-4874-8ae4-57def31c2b68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\ShaderLibrary">
+      <UniqueIdentifier>{fbd9ba90-d380-4169-8e7a-e1bb6ab7e6fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\HitGroup">
+      <UniqueIdentifier>{e8e66c0d-3e80-4fb2-8128-d419b53f0554}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\Association">
+      <UniqueIdentifier>{5e4c6ce0-8509-4495-bbcb-e5f93f09aba0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\RootSignature">
+      <UniqueIdentifier>{55430817-74da-4d37-93d6-0d4f96d27ce8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\ShaderConfig">
+      <UniqueIdentifier>{bc06c768-8d7c-4390-b90b-50fd991b2707}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SubObject\PipeLineConfig">
+      <UniqueIdentifier>{3eb63b50-7e2b-4a62-bf86-03b5af86c31b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -102,23 +117,38 @@
     <ClCompile Include="Descriptor\Primitive\Primitive.cpp">
       <Filter>Descriptor\Primitive</Filter>
     </ClCompile>
-    <ClCompile Include="SubObj\SubObj.cpp">
-      <Filter>SubObject</Filter>
-    </ClCompile>
     <ClCompile Include="Func\Func.cpp">
       <Filter>Function</Filter>
     </ClCompile>
     <ClCompile Include="Pipe\Pipe.cpp">
       <Filter>PipeLine</Filter>
     </ClCompile>
-    <ClCompile Include="Root\Root.cpp">
-      <Filter>RootSignature</Filter>
-    </ClCompile>
     <ClCompile Include="Descriptor\ShaderTbl\ShaderTbl.cpp">
       <Filter>Descriptor\ShaderTbl</Filter>
     </ClCompile>
     <ClCompile Include="Descriptor\Output\Output.cpp">
       <Filter>Descriptor\Output</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\SubObj.cpp">
+      <Filter>SubObject</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\ShaderLibrary\ShaderLibrary.cpp">
+      <Filter>SubObject\ShaderLibrary</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\HitGroup\HitGroup.cpp">
+      <Filter>SubObject\HitGroup</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\Association\Association.cpp">
+      <Filter>SubObject\Association</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\Root\Root.cpp">
+      <Filter>SubObject\RootSignature</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\ShaderConfig\ShaderConfig.cpp">
+      <Filter>SubObject\ShaderConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="SubObj\PipeConfig\PipeConfig.cpp">
+      <Filter>SubObject\PipeLineConfig</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -164,23 +194,38 @@
     <ClInclude Include="Matrix.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SubObj\SubObj.h">
-      <Filter>SubObject</Filter>
-    </ClInclude>
     <ClInclude Include="Func\Func.h">
       <Filter>Function</Filter>
     </ClInclude>
     <ClInclude Include="Pipe\Pipe.h">
       <Filter>PipeLine</Filter>
     </ClInclude>
-    <ClInclude Include="Root\Root.h">
-      <Filter>RootSignature</Filter>
-    </ClInclude>
     <ClInclude Include="Descriptor\ShaderTbl\ShaderTbl.h">
       <Filter>Descriptor\ShaderTbl</Filter>
     </ClInclude>
     <ClInclude Include="Descriptor\Output\Output.h">
       <Filter>Descriptor\Output</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\SubObj.h">
+      <Filter>SubObject</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\ShaderLibrary\ShaderLibrary.h">
+      <Filter>SubObject\ShaderLibrary</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\HitGroup\HitGroup.h">
+      <Filter>SubObject\HitGroup</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\Association\Association.h">
+      <Filter>SubObject\Association</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\Root\Root.h">
+      <Filter>SubObject\RootSignature</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\ShaderConfig\ShaderConfig.h">
+      <Filter>SubObject\ShaderConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="SubObj\PipeConfig\PipeConfig.h">
+      <Filter>SubObject\PipeLineConfig</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

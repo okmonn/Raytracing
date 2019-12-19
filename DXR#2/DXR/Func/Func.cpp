@@ -1,5 +1,6 @@
 #include "Func.h"
 #include <wrl.h>
+#include <array>
 #include <vector>
 #include <dxcapi.h>
 #include <Windows.h>

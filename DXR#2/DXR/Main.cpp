@@ -7,11 +7,16 @@
 #include "Descriptor/Render/Render.h"
 #include "Descriptor/Primitive/Primitive.h"
 #include "Descriptor/Acceleration/Acceleration.h"
-#include "SubObj/SubObj.h"
+#include "SubObj/ShaderLibrary/ShaderLibrary.h"
+#include "SubObj/HitGroup/HitGroup.h"
+#include "SubObj/Root/Root.h"
+#include "SubObj/Association/Association.h"
+#include "SubObj/ShaderConfig/ShaderConfig.h"
+#include "SubObj/PipeConfig/PipeConfig.h"
 #include "Pipe/Pipe.h"
-#include "Root/Root.h"
 #include "Descriptor/Output/Output.h"
 #include "Descriptor/ShaderTbl/ShaderTbl.h"
+
 #include <d3d12.h>
 
 int main()
@@ -39,16 +44,28 @@ int main()
 	queue.Execution(&list, 1);
 	fence.Wait();
 
-	SubObj sub("Shader/test.hlsl", "lib_6_4", 
-	   {"global", "rayGen", "rayGenAsso", 
+	ShaderLibrary shader("Shader/test.hlsl", "lib_6_4", 
+	   {/*"global", "rayGen", "rayGenAsso", 
 		"miss", "missAsso", 
 		"closest", "hit", "closestAsso",
-		"sConfig", "pConfig", 
+		"sConfig", "pConfig",*/ 
 		"RayGen", "Miss", "Chs"});
+	HitGroup hit("Hit", "Chs");
+	Root rayGenRoot(DXR::RootType::LOCAL, Root::RayGenDesc());
+	Association rayGenAsso(&rayGenRoot, { L"RayGen" });
+	DXR::RootInfo tmp(0, 0);
+	tmp.desc->Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+	Root missRoot(DXR::RootType::LOCAL, tmp);
+	Association missAsso(&missRoot, { L"Miss" });
+	Root closestRoot(DXR::RootType::LOCAL, tmp);
+	Association closestAsso(&closestRoot, { L"Chs" });
+	ShaderConfig sConfig(16);
+	Association configAsso(&sConfig, { L"RayGen", L"Miss", L"Chs" });
+	PipeConfig pConfig(0);
+	Root global(DXR::RootType::GLOBAL, {});
 
-	Pipe pipe({&sub});
-
-	Root root(&sub);
+	Pipe pipe({&shader, &hit, &rayGenRoot, &rayGenAsso, &missRoot, &missAsso, 
+		&closestRoot, &closestAsso, &sConfig, &configAsso, &pConfig, &global});
 
 	Output output(&win, &top);
 
@@ -71,7 +88,7 @@ int main()
 		list.Scissor(&win);*/
 
 		list.SetPipe(&pipe);
-		list.SetRoot(&root);
+		list.SetRoot(&global);
 
 		list.Barrier(output.Rsc(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		D3D12_DISPATCH_RAYS_DESC desc{};

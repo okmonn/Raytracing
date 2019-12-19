@@ -156,7 +156,12 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Pipe\Pipe.cpp" />
     <ClCompile Include="Queue\Queue.cpp" />
-    <ClCompile Include="Root\Root.cpp" />
+    <ClCompile Include="SubObj\Association\Association.cpp" />
+    <ClCompile Include="SubObj\HitGroup\HitGroup.cpp" />
+    <ClCompile Include="SubObj\PipeConfig\PipeConfig.cpp" />
+    <ClCompile Include="SubObj\Root\Root.cpp" />
+    <ClCompile Include="SubObj\ShaderConfig\ShaderConfig.cpp" />
+    <ClCompile Include="SubObj\ShaderLibrary\ShaderLibrary.cpp" />
     <ClCompile Include="SubObj\SubObj.cpp" />
     <ClCompile Include="Swap\Swap.cpp" />
     <ClCompile Include="Window\Window.cpp" />
@@ -177,7 +182,12 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Pipe\Pipe.h" />
     <ClInclude Include="Queue\Queue.h" />
-    <ClInclude Include="Root\Root.h" />
+    <ClInclude Include="SubObj\Association\Association.h" />
+    <ClInclude Include="SubObj\HitGroup\HitGroup.h" />
+    <ClInclude Include="SubObj\PipeConfig\PipeConfig.h" />
+    <ClInclude Include="SubObj\Root\Root.h" />
+    <ClInclude Include="SubObj\ShaderConfig\ShaderConfig.h" />
+    <ClInclude Include="SubObj\ShaderLibrary\ShaderLibrary.h" />
     <ClInclude Include="SubObj\SubObj.h" />
     <ClInclude Include="Swap\Swap.h" />
     <ClInclude Include="Vector.h" />

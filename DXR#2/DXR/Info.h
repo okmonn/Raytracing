@@ -11,6 +11,13 @@ namespace DXR
 		COPY
 	};
 
+	// ルートシグネチャタイプ
+	enum class RootType
+	{
+		GLOBAL = 1,
+		LOCAL
+	};
+
 	// シェーダタイプ
 	enum class ShaderType
 	{
