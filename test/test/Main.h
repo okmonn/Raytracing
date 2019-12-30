@@ -118,13 +118,13 @@ namespace okmonn
 		}
 
 		//リザルトリソースの取得
-		okmonn::Interface<ID3D12Resource1> Scratch(void) const
+		okmonn::Interface<ID3D12Resource1> Result(void) const
 		{
 			return rsc[1];
 		}
 
 		//インスタンスリソースの取得
-		okmonn::Interface<ID3D12Resource1> Scratch(void) const
+		okmonn::Interface<ID3D12Resource1> Instance(void) const
 		{
 			return rsc[2];
 		}
