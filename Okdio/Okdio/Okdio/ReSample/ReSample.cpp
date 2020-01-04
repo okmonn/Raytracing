@@ -24,16 +24,22 @@ const unsigned long spk[] = {
 };
 
 // コンストラクタ
-ReSample::ReSample() :
+ReSample::ReSample(const float& quality) :
 	inputType(nullptr), outputType(nullptr), transform(nullptr)
 {
 	InitInputType();
 	InitOutputType();
+	Start(quality);
 }
 
 // デストラクタ
 ReSample::~ReSample()
 {
+	auto hr = transform->ProcessMessage(MFT_MESSAGE_NOTIFY_END_STREAMING, 0);
+	_ASSERT(hr == S_OK);
+
+	hr = MFShutdown();
+	_ASSERT(hr == S_OK);
 }
 
 // 入力メディアの初期化
@@ -61,7 +67,7 @@ void ReSample::InitOutputType(void)
 	_ASSERT(hr == S_OK);
 
 	//入力メディアの内容コピー
-	hr = inputType->CopyAllItems(outputType);
+	hr = inputType->CopyAllItems(outputType.Get());
 	_ASSERT(hr == S_OK);
 }
 
@@ -78,7 +84,7 @@ void ReSample::Start(const float& quality)
 	hr = unknown->QueryInterface(IID_PPV_ARGS(&transform));
 	_ASSERT(hr == S_OK);
 
-	Microsoft::WRL::ComPtr< IWMResamplerProps>prop = nullptr;
+	Microsoft::WRL::ComPtr<IWMResamplerProps>prop = nullptr;
 	hr = unknown->QueryInterface(IID_PPV_ARGS(&prop));
 	_ASSERT(hr == S_OK);
 
@@ -98,7 +104,7 @@ void ReSample::SetInputType(const okmonn::SoundInfo& info)
 	_ASSERT(hr == S_OK);
 	hr = inputType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, info.sample * info.channel * sizeof(float));
 	_ASSERT(hr == S_OK);
-	hr = transform->SetInputType(0, inputType, 0);
+	hr = transform->SetInputType(0, inputType.Get(), 0);
 	_ASSERT(hr == S_OK);
 }
 
@@ -113,7 +119,7 @@ void ReSample::SetOutputType(const okmonn::SoundInfo& info)
 	_ASSERT(hr == S_OK);
 	hr = outputType->SetUINT32(MF_MT_AUDIO_AVG_BYTES_PER_SECOND, info.sample * info.channel * sizeof(float));
 	_ASSERT(hr == S_OK);
-	hr = transform->SetOutputType(0, outputType, 0);
+	hr = transform->SetOutputType(0, outputType.Get(), 0);
 	_ASSERT(hr == S_OK);
 }
 
@@ -133,7 +139,7 @@ void ReSample::SendStartMsg(void)
 void ReSample::SetInputData(void* desc, const std::vector<float>& input)
 {
 	Microsoft::WRL::ComPtr<IMFMediaBuffer>buf = nullptr;
-	auto hr = MFCreateMemoryBuffer(sizeof(float) * input.size(), &buf);
+	auto hr = MFCreateMemoryBuffer(unsigned long(sizeof(float) * input.size()), &buf);
 	_ASSERT(hr == S_OK);
 
 	//データのコピー
@@ -145,7 +151,7 @@ void ReSample::SetInputData(void* desc, const std::vector<float>& input)
 	_ASSERT(hr == S_OK);
 
 	//有効範囲の設定
-	hr = buf->SetCurrentLength(sizeof(float) * input.size());
+	hr = buf->SetCurrentLength(unsigned long(sizeof(float) * input.size()));
 	_ASSERT(hr == S_OK);
 
 	//バッファの追加
@@ -206,6 +212,12 @@ void ReSample::SendRemainingData(void)
 // リサンプル
 std::vector<float> ReSample::Convert(const std::vector<float>& data, const okmonn::SoundInfo& input, const okmonn::SoundInfo& output)
 {
+	std::vector<float>tmp;
+	if (input.sample == output.sample)
+	{
+		return data;
+	}
+
 	SetInputType(input);
 	SetOutputType(output);
 	SendStartMsg();
@@ -216,36 +228,14 @@ std::vector<float> ReSample::Convert(const std::vector<float>& data, const okmon
 
 	SetInputData((void*)&desc, data);
 
-	std::vector<float>tmp;
 	GetOutputData((void*)&desc, tmp);
 	SendRemainingData();
 	GetOutputData((void*)&desc, tmp);
 
+	if (desc.pSample != nullptr)
+	{
+		desc.pSample->Release();
+	}
+
 	return tmp;
-}
-
-// 終了
-void ReSample::Finish(void)
-{
-	auto hr = transform->ProcessMessage(MFT_MESSAGE_NOTIFY_END_STREAMING, 0);
-	_ASSERT(hr == S_OK);
-
-	if (outputType != nullptr)
-	{
-		outputType->Release();
-		outputType = nullptr;
-	}
-	if (inputType != nullptr)
-	{
-		inputType->Release();
-		inputType = nullptr;
-	}
-	if (transform != nullptr)
-	{
-		transform->Release();
-		transform = nullptr;
-	}
-
-	hr = MFShutdown();
-	_ASSERT(hr == S_OK);
 }

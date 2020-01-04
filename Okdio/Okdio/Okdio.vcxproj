@@ -129,17 +129,25 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Okdio\Func\Func.cpp" />
+    <ClCompile Include="Okdio\Okdio.cpp" />
+    <ClCompile Include="Okdio\OkdioEngine.cpp" />
+    <ClCompile Include="Okdio\ReSample\ReSample.cpp" />
     <ClCompile Include="Okdio\Singleton\Loader\Loader.cpp" />
-    <ClCompile Include="Okdio\Singleton\ReSample\ReSample.cpp" />
+    <ClCompile Include="Okdio\Singleton\OkdioList\OkdioList.cpp" />
+    <ClCompile Include="Okdio\Singleton\SoundBuffer\SoundBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Okdio\Format\Wav.h" />
     <ClInclude Include="Okdio\Func\Func.h" />
     <ClInclude Include="Okdio\Info.h" />
+    <ClInclude Include="Okdio\Okdio.h" />
+    <ClInclude Include="Okdio\OkdioEngine.h" />
+    <ClInclude Include="Okdio\Parent\Oknown.h" />
+    <ClInclude Include="Okdio\ReSample\ReSample.h" />
     <ClInclude Include="Okdio\Singleton\Loader\Loader.h" />
-    <ClInclude Include="Okdio\Singleton\ReSample\ReSample.h" />
+    <ClInclude Include="Okdio\Singleton\OkdioList\OkdioList.h" />
     <ClInclude Include="Okdio\Singleton\Singleton.h" />
-    <ClInclude Include="Okdio\Unknown.h" />
+    <ClInclude Include="Okdio\Singleton\SoundBuffer\SoundBuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,37 +1,31 @@
 #pragma once
-#include "../Singleton.h"
-#include "../../Info.h"
+#include "../Info.h"
+#include <wrl.h>
 #include <vector>
 
 struct IMFMediaType;
 struct IMFTransform;
 
-class ReSample :
-	public Singleton<ReSample>
+class ReSample
 {
-	friend Singleton<ReSample>;
 public:
-public:
-	// 開始
-	void Start(const float& quality = 1.0f);
+	// コンストラクタ
+	ReSample(const float& quality = 1.0f);
+	// デストラクタ
+	~ReSample();
 
 	// リサンプル
 	std::vector<float> Convert(const std::vector<float>& data, const okmonn::SoundInfo& input, const okmonn::SoundInfo& output);
 
-	// 終了
-	void Finish(void);
-
 private:
-	// コンストラクタ
-	ReSample();
-	// デストラクタ
-	~ReSample();
-
 	// 入力メディアの初期化
 	void InitInputType(void);
 
 	// 出力メディアの初期化
 	void InitOutputType(void);
+
+	// 開始
+	void Start(const float& quality);
 
 	// 入力メディアの設定
 	void SetInputType(const okmonn::SoundInfo& info);
@@ -53,11 +47,11 @@ private:
 
 
 	// 入力メディア
-	IMFMediaType* inputType;
+	Microsoft::WRL::ComPtr<IMFMediaType>inputType;
 
 	// 出力メディア
-	IMFMediaType* outputType;
+	Microsoft::WRL::ComPtr<IMFMediaType>outputType;
 
 	// 変換インターフェイス
-	IMFTransform* transform;
+	Microsoft::WRL::ComPtr<IMFTransform>transform;
 };

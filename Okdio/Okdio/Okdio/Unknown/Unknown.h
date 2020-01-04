@@ -2,16 +2,19 @@
 #include <Unknwn.h>
 
 template <typename T>
-class UnKnown
+class Unknown :
+	public IUnknown
 {
 public:
 	// 参照カウント加算
-	unsigned long __stdcall AddRef(void) {
+	unsigned long __stdcall AddRef(void) 
+	{
 		return InterlockedIncrement(&cnt);
 	}
 
 	// 参照カウント減少
-	unsigned long __stdcall Release(void) {
+	unsigned long __stdcall Release(void) 
+	{
 		unsigned long hr = InterlockedDecrement(&cnt);
 		if (hr == 0)
 		{
@@ -22,7 +25,8 @@ public:
 	}
 
 	// サポートチェック
-	long __stdcall QueryInterface(const GUID& id, void** obj) {
+	long __stdcall QueryInterface(const GUID& id, void** obj) 
+	{
 		if (obj == nullptr)
 		{
 			return E_INVALIDARG;
@@ -45,7 +49,7 @@ private:
 
 protected:
 	// コンストラクタ
-	UnKnown() : cnt(1) {}
-	// デストラク
-	virtual ~UnKnown() {}
+	Unknown() : cnt(1) {}
+	// デストラクタ
+	virtual ~Unknown() {}
 };

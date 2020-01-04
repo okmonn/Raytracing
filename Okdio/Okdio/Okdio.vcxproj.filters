@@ -25,8 +25,23 @@
     <Filter Include="Singleton\Loader">
       <UniqueIdentifier>{c112cd4e-a853-4a60-8377-27db6c96cd8e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Singleton\ReSample">
+    <Filter Include="Parent">
+      <UniqueIdentifier>{29c14cb0-b2c2-4070-be55-5a527275f5ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parent\OkdioEngine">
+      <UniqueIdentifier>{d0a318e3-244f-443a-8cbf-3b65d69c0af9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Singleton\SoundBuffer">
+      <UniqueIdentifier>{eab3e407-af70-48bf-b8e3-e57740341ee6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parent\Okdio">
+      <UniqueIdentifier>{aa8e568c-b50b-47c7-b81f-6f41bf8209a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ReSample">
       <UniqueIdentifier>{0b23d9a3-9b55-4468-90c7-343bb7f3fcec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Singleton\OkdioList">
+      <UniqueIdentifier>{b3d156ad-cd90-49a0-aa30-532313aacce8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -39,16 +54,25 @@
     <ClCompile Include="Okdio\Singleton\Loader\Loader.cpp">
       <Filter>Singleton\Loader</Filter>
     </ClCompile>
-    <ClCompile Include="Okdio\Singleton\ReSample\ReSample.cpp">
-      <Filter>Singleton\ReSample</Filter>
+    <ClCompile Include="Okdio\OkdioEngine.cpp">
+      <Filter>Parent\OkdioEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Singleton\SoundBuffer\SoundBuffer.cpp">
+      <Filter>Singleton\SoundBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Okdio.cpp">
+      <Filter>Parent\Okdio</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\ReSample\ReSample.cpp">
+      <Filter>ReSample</Filter>
+    </ClCompile>
+    <ClCompile Include="Okdio\Singleton\OkdioList\OkdioList.cpp">
+      <Filter>Singleton\OkdioList</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Okdio\Singleton\Singleton.h">
       <Filter>Singleton</Filter>
-    </ClInclude>
-    <ClInclude Include="Okdio\Unknown.h">
-      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Okdio\Format\Wav.h">
       <Filter>Format</Filter>
@@ -62,8 +86,23 @@
     <ClInclude Include="Okdio\Singleton\Loader\Loader.h">
       <Filter>Singleton\Loader</Filter>
     </ClInclude>
-    <ClInclude Include="Okdio\Singleton\ReSample\ReSample.h">
-      <Filter>Singleton\ReSample</Filter>
+    <ClInclude Include="Okdio\OkdioEngine.h">
+      <Filter>Parent\OkdioEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Singleton\SoundBuffer\SoundBuffer.h">
+      <Filter>Singleton\SoundBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Okdio.h">
+      <Filter>Parent\Okdio</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\ReSample\ReSample.h">
+      <Filter>ReSample</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Parent\Oknown.h">
+      <Filter>Parent</Filter>
+    </ClInclude>
+    <ClInclude Include="Okdio\Singleton\OkdioList\OkdioList.h">
+      <Filter>Singleton\OkdioList</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

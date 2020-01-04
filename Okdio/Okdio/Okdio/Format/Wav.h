@@ -49,16 +49,16 @@ namespace wav
 		//RIFFチャンクの読み込み
 		RIFF riff{};
 		file.read((char*)&riff, sizeof(riff));
-		if (okmonn::ChangeCode(riff.id, sizeof(riff.id)) != "RIFF"
-		 || okmonn::ChangeCode(riff.type, sizeof(riff.type)) != "WAVE")
+		if (std::string(riff.id, sizeof(riff.id)) != "RIFF"
+			|| std::string(riff.type, sizeof(riff.type)) != "WAVE")
 		{
 			return 1;
 		}
-
+		
 		//FMTチャンクの読み込み
 		FMT fmt{};
 		file.read((char*)&fmt, sizeof(fmt));
-		if (okmonn::ChangeCode(fmt.id, sizeof(fmt.id)) != "fmt ")
+		if (std::string(fmt.id, sizeof(fmt.id)) != "fmt ")
 		{
 			return 1;
 		}
@@ -66,8 +66,8 @@ namespace wav
 		file.seekg(fmt.size - (sizeof(fmt) - sizeof(fmt.id) - sizeof(fmt.size)), std::ios::cur);
 
 		//DATAチャンクまでスキップ
-		std::string id("data");
 		long size = 0;
+		std::string id = "data";
 		do
 		{
 			file.seekg(size, std::ios::cur);
@@ -75,7 +75,7 @@ namespace wav
 			file.read((char*)&size, sizeof(size));
 		} while (id != "data");
 
-		info = okmonn::SoundInfo(fmt.sample, fmt.bit / 8, fmt.channel, (fmt.type == 3) ? 1 : 0);
+		info = okmonn::SoundInfo(fmt.sample, fmt.bit / 8, unsigned char(fmt.channel), (fmt.type == 3) ? 1 : 0);
 
 		//DATAチャンクの読み込み
 		switch (info.byte)

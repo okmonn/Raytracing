@@ -25,6 +25,15 @@ namespace okmonn
 		std::string devName;
 	};
 
+	// オーディオ再生タイプ
+	enum class PlayType
+	{
+		//共有モード
+		shared,
+		//排他モード
+		exclusive
+	};
+
 	// サウンド情報
 	struct SoundInfo
 	{

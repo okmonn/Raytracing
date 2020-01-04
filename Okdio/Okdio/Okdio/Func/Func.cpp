@@ -2,8 +2,11 @@
 #include <wrl.h>
 #include <initguid.h>
 #include <mmdeviceapi.h>
-#include <propvarutil.h>
 #include <functiondiscoverykeys_devpkey.h>
+#include <propvarutil.h>
+#include "../Singleton/Loader/Loader.h"
+
+#pragma comment(lib, "Propsys.lib")
 
 // ユニコード文字からマルチバイト文字に変換
 std::string okmonn::ChangeCode(const std::wstring& str)
@@ -12,12 +15,6 @@ std::string okmonn::ChangeCode(const std::wstring& str)
 	WideCharToMultiByte(CP_OEMCP, 0, str.c_str(), -1, buf.data(), buf.size(), nullptr, nullptr);
 
 	return std::string(buf.begin(), buf.end());
-}
-
-// stringに変換
-std::string okmonn::ChangeCode(const char* str, const size_t& size)
-{
-	return std::string(&str[0], size);
 }
 
 // オーディオデバイスの列挙
@@ -85,4 +82,10 @@ std::vector<okmonn::AudioDevProp> okmonn::GetAudioDevProp(const AudioDevType& ty
 	CoTaskMemFree(buf);
 
 	return prop;
+}
+
+// サウンド情報の取得
+okmonn::SoundInfo okmonn::GetInfo(const std::string& fileName)
+{
+	return Loader::Get().Info(fileName);
 }
