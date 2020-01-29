@@ -27,7 +27,14 @@ int main() {
 		CreateRsc(&rtvRsc[i], swap.Get(), i);
 		RTV(rtvRsc[i].Get(), dev.Get(), rtvHeap.Get(), i);
 	}
-	
+	const float vertex[] = {
+		-1.0f,  1.0f, 1.0f,
+		 1.0f,  1.0f, 1.0f,
+		 0.0f, -1.0f, 1.0f
+	};
+	CreateRsc(&triangle, dev.Get(), sizeof(vertex[0]), _countof(vertex));
+	Copy(triangle.Get(), (void*)vertex);
+
 	while (CheckMsg() && !(GetKeyState(VK_ESCAPE) & 0x80)) {
 		Reset(allo.Get());
 		Reset(list.Get(), allo.Get());

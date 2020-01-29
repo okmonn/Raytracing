@@ -52,3 +52,5 @@ Obj<IDXGISwapChain4>swap;
 std::vector<Obj<ID3D12Resource1>>rtvRsc;
 /*レンダーターゲット用ヒープ*/
 Obj<ID3D12DescriptorHeap>rtvHeap;
+/*三角形プリミティブ用リソース*/
+Obj<ID3D12Resource1>triangle;

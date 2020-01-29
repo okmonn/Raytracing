@@ -82,7 +82,7 @@ bool CheckMsg(void)
 void CreateDevice(ID3D12Device5** dev, const D3D_FEATURE_LEVEL& level)
 {
 #ifdef _DEBUG
-	ID3D12Debug3* debug = nullptr;
+	ID3D12Debug* debug = nullptr;
 	D3D12GetDebugInterface(IID_PPV_ARGS(&debug));
 	debug->EnableDebugLayer();
 	debug->Release();
@@ -181,6 +181,32 @@ void CreateRsc(ID3D12Resource1** rsc, IDXGISwapChain4* swap, const std::uint32_t
 	assert(hr == S_OK);
 }
 
+void CreateRsc(ID3D12Resource1** rsc, ID3D12Device5* dev, const std::uint32_t& vertexStride, const std::uint32_t& vertexNum)
+{
+	D3D12_HEAP_PROPERTIES prop{};
+	prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	prop.CreationNodeMask     = 0;
+	prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+	prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+	prop.VisibleNodeMask      = 0;
+
+	D3D12_RESOURCE_DESC desc{};
+	desc.Alignment        = 0;
+	desc.DepthOrArraySize = 1;
+	desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+	desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+	desc.Format           = DXGI_FORMAT_UNKNOWN;
+	desc.Height           = 1;
+	desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	desc.MipLevels        = 1;
+	desc.SampleDesc       = { 1, 0 };
+	desc.Width            = vertexStride * vertexNum;
+
+	auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+		&desc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&(*rsc)));
+	assert(hr == S_OK);
+}
+
 void RTV(ID3D12Resource1* rsc, ID3D12Device5* dev, ID3D12DescriptorHeap* heap, const std::uint32_t& index)
 {
 	D3D12_RENDER_TARGET_VIEW_DESC desc{};
@@ -248,6 +274,17 @@ std::uint32_t GetBuffIndex(IDXGISwapChain4* swap)
 	return swap->GetCurrentBackBufferIndex();
 }
 
+void Copy(ID3D12Resource1* rsc, void* data)
+{
+	void* buf = nullptr;
+	auto hr = rsc->Map(0, nullptr, &buf);
+	assert(hr == S_OK);
+
+	std::memcpy(buf, data, rsc->GetDesc().Width);
+
+	rsc->Unmap(0, nullptr);
+}
+
 void Clear(ID3D12DescriptorHeap* heap, ID3D12Device5* dev, ID3D12GraphicsCommandList4* list, const std::uint32_t& index, const float* color, ID3D12DescriptorHeap* depth)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = heap->GetCPUDescriptorHandleForHeapStart();
@@ -261,7 +298,7 @@ void Clear(ID3D12DescriptorHeap* heap, ID3D12Device5* dev, ID3D12GraphicsCommand
 void Execution(ID3D12CommandQueue* queue, const std::initializer_list<ID3D12GraphicsCommandList4*>& lists)
 {
 	std::vector<ID3D12CommandList*>list;
-	for (auto& i : list) {
+	for (auto& i : lists) {
 		list.push_back(i);
 	}
 

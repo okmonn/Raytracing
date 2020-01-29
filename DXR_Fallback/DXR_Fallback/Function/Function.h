@@ -64,6 +64,12 @@ void CreateHeap(ID3D12DescriptorHeap** heap, ID3D12Device5* dev, const D3D12_DES
 .スワップチェイン
 .リソースインデックス*/
 void CreateRsc(ID3D12Resource1** rsc, IDXGISwapChain4* swap, const std::uint32_t& index);
+/*プリミティブリソースの生成
+.リソース
+.デバイス
+.1頂点当たりのサイズ
+.頂点数*/
+void CreateRsc(ID3D12Resource1** rsc, ID3D12Device5* dev, const std::uint32_t& vertexStride, const std::uint32_t& vertexNum);
 /*レンダーターゲットビューの生成
 .リソース
 .デバイス
@@ -98,6 +104,10 @@ std::uint32_t GetBackBuffNum(IDXGISwapChain4* swap);
 .スワップチェイン
 return バックバッファインデックス*/
 std::uint32_t GetBuffIndex(IDXGISwapChain4* swap);
+/*データのコピー
+.リソース
+.データ*/
+void Copy(ID3D12Resource1* rsc, void* data);
 /*レンダーターゲットのクリア
 .ディスクリプタヒープ
 .コマンドリスト
