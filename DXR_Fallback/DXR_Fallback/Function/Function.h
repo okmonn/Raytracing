@@ -1,18 +1,18 @@
 #pragma once
 #include <d3d12.h>
+#include <dxcapi.h>
 #include <dxgi1_6.h>
 #include <D3D12RaytracingFallback.h>
+
+#include <string>
+#include <vector>
 #include <cstdint>
-#include <initializer_list>
 
 /*ウィンドウの生成
 .ウィンドウハンドル
 .横幅
 .縦幅*/
 void CreateWnd(void** handle, const std::uint32_t& sizeX, const std::uint32_t& sizeY);
-/*ウィンドウメッセージの確認
-return 終了フラグ*/
-bool CheckMsg(void);
 /*デバイスの生成
 .デバイス
 .機能レベル*/
@@ -76,6 +76,46 @@ void CreateRsc(ID3D12Resource1** rsc, ID3D12Device5* dev, const std::uint32_t& v
 .ディスクリプタヒープ
 .リソースインデックス*/
 void RTV(ID3D12Resource1* rsc, ID3D12Device5* dev, ID3D12DescriptorHeap* heap, const std::uint32_t& index);
+/*加速構造(ボトムレベル)の生成
+.スクラッチリソース
+.リザルトリソース
+.フォールバック用デバイス
+.フォールバック用コマンドリスト
+.ディスクリプタヒープ
+.プリミティブ用リソース
+.頂点数*/
+void CreateAcceleration(ID3D12Resource1** scratch, ID3D12Resource1** result, ID3D12RaytracingFallbackDevice* dev, ID3D12RaytracingFallbackCommandList* list, ID3D12DescriptorHeap* heap, ID3D12Resource1* primitive, const std::uint32_t& vertexNum);
+/*加速構造(トップレベル)の生成
+.スクラッチリソース
+.リザルトリソース
+.インスタンスリソース
+.フォールバック用デバイス
+.フォールバック用コマンドリスト
+.ディスクリプタヒープ*/
+void CreateAcceleration(ID3D12Resource1** scratch, ID3D12Resource1** result, ID3D12Resource1** instance, ID3D12RaytracingFallbackDevice* dev, ID3D12RaytracingFallbackCommandList* list, ID3D12DescriptorHeap* heap);
+/*グローバルルートシグネチャの生成
+.ルートシグネチャ
+.フォールバック用デバイス
+.サブオブジェクト*/
+void CreateGlobalRoot(ID3D12RootSignature** root, ID3D12RaytracingFallbackDevice* dev, std::vector<D3D12_STATE_SUBOBJECT>& subObj);
+/*ローカルルートシグネチャの生成
+.ルートシグネチャ
+.フォールバック用デバイス
+.サブオブジェクト*/
+void CreateLocalRoot(ID3D12RootSignature** root, ID3D12RaytracingFallbackDevice* dev, std::vector<D3D12_STATE_SUBOBJECT>& subObj);
+/*レイジェネレーション用ローカルルートシグネチャの生成
+.ルートシグネチャ
+.フォールバック用デバイス
+.サブオブジェクト*/
+void CreateLocalRayGenRoot(ID3D12RootSignature** root, ID3D12RaytracingFallbackDevice* dev, std::vector<D3D12_STATE_SUBOBJECT>& subObj);
+/*パイプラインの生成
+.パイプライン
+.フォールバック用デバイス
+.サブオブジェクト*/
+void CreatePipe(ID3D12RaytracingFallbackStateObject** pipe, ID3D12RaytracingFallbackDevice* dev, const std::vector<D3D12_STATE_SUBOBJECT>& subObj);
+/*ウィンドウメッセージの確認
+return 終了フラグ*/
+bool CheckMsg(void);
 /*コマンドアロケータのリセット
 .コマンドアロケータ*/
 void Reset(ID3D12CommandAllocator* allo);
@@ -115,6 +155,46 @@ void Copy(ID3D12Resource1* rsc, void* data);
 .クリアカラー[4]
 .DSV用ディスクリプタヒープ*/
 void Clear(ID3D12DescriptorHeap* heap, ID3D12Device5* dev, ID3D12GraphicsCommandList4* list, const std::uint32_t& index, const float* color, ID3D12DescriptorHeap* depth = nullptr);
+/*加速構造(トップレベル)の更新
+.加速構造(トップレベル)用インスタンスリソース
+.加速構造(ボトムレベル)用リザルトリソース*/
+void AccelerationUpDate(ID3D12Resource1* rsc, ID3D12Resource1* bottom);
+/*シェーダのコンパイル
+.シェーダファイルパス
+.シェーダモデル
+.シェーダ情報
+.DXIL情報
+.読み込み関数情報
+.サブオブジェクト
+.読み込み関数名(格納済み)
+.読み込み関数名数*/
+void ShaderCompile(const std::wstring& filePath, const std::wstring& model, IDxcBlob** blob, 
+	D3D12_DXIL_LIBRARY_DESC& dxil, std::vector<D3D12_EXPORT_DESC>& exportDesc, std::vector<D3D12_STATE_SUBOBJECT>& subObj, const wchar_t* exportName[], const std::uint32_t& exportNameNum);
+/*ヒットグループの設定
+.ヒットグループ情報
+.サブオブジェクト
+.closesthit関数名
+.ヒットグループ名
+.anyhit関数名
+.intersection関数名*/
+void SetHitGroup(D3D12_HIT_GROUP_DESC& hitDesc, std::vector<D3D12_STATE_SUBOBJECT>& subObj, const wchar_t* closesthit, const wchar_t* hitName, const wchar_t* anyhit = nullptr, const wchar_t* intersection = nullptr);
+/*シェーダ設定
+.シェーダ設定
+.サブオブジェクト
+.ペイロードサイズ
+.アトリビュートサイズ*/
+void SetShaderConfig(D3D12_RAYTRACING_SHADER_CONFIG& config, std::vector<D3D12_STATE_SUBOBJECT>& subObj, const std::uint32_t& payloadSize, const std::uint32_t& attributeSize = sizeof(float) * 2);
+/*読み込みとの関連付け
+.読み込み関連付け情報
+.サブオブジェクト
+.読み込み関数名
+.読み込み関数名数*/
+void ExportAssociation(D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION& association, std::vector<D3D12_STATE_SUBOBJECT>& subObj, const wchar_t* exportName[], const std::uint32_t& exportNameNum = 1);
+/*パイプライン設定
+.パイプライン設定
+.サブオブジェクト
+.TraceRay呼び出し回数*/
+void SetPipeConfig(D3D12_RAYTRACING_PIPELINE_CONFIG& config, std::vector<D3D12_STATE_SUBOBJECT>& subObj, const std::uint32_t& depth);
 /*コマンドの実行
 .コマンドキュー
 .コマンドリスト*/
