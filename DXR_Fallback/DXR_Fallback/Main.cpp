@@ -200,6 +200,7 @@ int main() {
 			}
 		}
 	}
+	/*サブオブジェクト関連*/
 	std::vector<D3D12_STATE_SUBOBJECT>subObj;
 	subObj.reserve(12);
 	/*シェーダのコンパイル*/
@@ -411,6 +412,104 @@ int main() {
 		else {
 			auto hr = f_dev->CreateStateObject(&desc, IID_PPV_ARGS(&f_pipe));
 			assert(hr == S_OK);
+		}
+	}
+	/*プリミティブの生成*/
+	ID3D12Resource1* primitive = nullptr;
+	{
+		/*頂点データ*/
+		const float vertex[] = {
+			 0.0f  ,  1.0f, 0.0f,
+			 0.866f, -0.5f, 0.0f,
+			-0.866f, -0.5f, 0.0f
+		};
+		{
+			D3D12_HEAP_PROPERTIES prop{};
+			prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+			prop.CreationNodeMask     = 0;
+			prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+			prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+			prop.VisibleNodeMask      = 0;
+
+			D3D12_RESOURCE_DESC desc{};
+			desc.Alignment        = 0;
+			desc.DepthOrArraySize = 1;
+			desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+			desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+			desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+			desc.Height           = 1;
+			desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+			desc.MipLevels        = 1;
+			desc.SampleDesc       = { 1, 0 };
+			desc.Width            = sizeof(vertex[0]) * _countof(vertex);
+
+			auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&primitive));
+			assert(hr == S_OK);
+		}
+		{
+			void* buf = nullptr;
+			auto hr = primitive->Map(0, nullptr, &buf);
+			assert(hr == S_OK);
+			std::memcpy(buf, vertex, primitive->GetDesc().Width);
+			primitive->Unmap(0, nullptr);
+		}
+	}
+	/*レイトレーシング結果関連*/
+	ID3D12DescriptorHeap* resultHeap = nullptr;
+	ID3D12Resource1* resultRsc = nullptr;
+	{
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC desc{};
+			desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			desc.NodeMask       = 0;
+			desc.NumDescriptors = 2;
+			desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+			auto hr = dev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&resultHeap));
+			assert(hr == S_OK);
+		}
+		{
+			D3D12_HEAP_PROPERTIES prop{};
+			prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+			prop.CreationNodeMask     = 0;
+			prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+			prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+			prop.VisibleNodeMask      = 0;
+
+			D3D12_RESOURCE_DESC desc{};
+			desc.Alignment        = 0;
+			desc.DepthOrArraySize = 1;
+			desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+			desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			desc.Format           = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+			desc.Height           = sizeY;
+			desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
+			desc.MipLevels        = 1;
+			desc.SampleDesc       = { 1, 0 };
+			desc.Width            = sizeX;
+
+			auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, nullptr, IID_PPV_ARGS(&resultRsc));
+			assert(hr == S_OK);
+		}
+		auto handle = resultHeap->GetCPUDescriptorHandleForHeapStart();
+		{
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc{};
+			desc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
+
+			dev->CreateUnorderedAccessView(resultRsc, nullptr, &desc, handle);
+		}
+		{
+			if (f_dev->UsingRaytracingDriver() == true) {
+				D3D12_SHADER_RESOURCE_VIEW_DESC desc{};
+				desc.RaytracingAccelerationStructure.Location = 0;
+				desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+				desc.ViewDimension                            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+
+				handle.ptr += dev->GetDescriptorHandleIncrementSize(resultHeap->GetDesc().Type);
+				dev->CreateShaderResourceView(nullptr, &desc, handle);
+			}
 		}
 	}
 
