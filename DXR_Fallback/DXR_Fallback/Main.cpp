@@ -577,6 +577,7 @@ int main() {
 	/*加速構造(トップレベル)の生成*/
 	ID3D12DescriptorHeap* topHeap = nullptr;
 	ID3D12Resource1* top = nullptr;
+	WRAPPED_GPU_POINTER topAdr = {};
 	{
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC desc{};
@@ -635,8 +636,83 @@ int main() {
 		desc.Width = info.ScratchDataSizeInBytes;
 
 		hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
-			D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&scratch));
+			D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, nullptr, IID_PPV_ARGS(&scratch));
 		assert(hr == S_OK);
+
+		desc.Width = info.ResultDataMaxSizeInBytes;
+		if (f_dev->UsingRaytracingDriver() == true) {
+			hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nullptr, nullptr, IID_PPV_ARGS(&top));
+		}
+		else {
+			hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				f_dev->GetAccelerationStructureResourceState(), nullptr, nullptr, IID_PPV_ARGS(&top));
+		}
+		assert(hr == S_OK);
+		{
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc{};
+			desc.Buffer.Flags       = D3D12_BUFFER_UAV_FLAGS::D3D12_BUFFER_UAV_FLAG_RAW;
+			desc.Buffer.NumElements = std::uint32_t(top->GetDesc().Width / sizeof(std::uint32_t));
+			desc.Format             = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+			desc.ViewDimension      = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_BUFFER;
+
+			dev->CreateUnorderedAccessView(top, nullptr, &desc, topHeap->GetCPUDescriptorHandleForHeapStart());
+		}
+		{
+			D3D12_RAYTRACING_FALLBACK_INSTANCE_DESC* buf = nullptr;
+			hr = instance->Map(0, nullptr, (void**)&buf);
+			assert(hr == S_OK);
+
+			buf->AccelerationStructure               = f_dev->GetWrappedPointerSimple(0, bottom->GetGPUVirtualAddress());
+			buf->Flags                               = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+			buf->InstanceContributionToHitGroupIndex = 0;
+			buf->InstanceID                          = 0;
+			buf->InstanceMask                        = 0xff;
+			for (std::uint32_t i = 0; i < 3; ++i) {
+				buf->Transform[i][i] = 1.0f;
+			}
+
+			instance->Unmap(0, nullptr);
+		}
+		{
+			allo->Reset();
+			list->Reset(allo, nullptr);
+
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+			desc.DestAccelerationStructureData    = top->GetGPUVirtualAddress();
+			desc.Inputs                           = input;
+			desc.ScratchAccelerationStructureData = scratch->GetGPUVirtualAddress();
+			if (f_dev->UsingRaytracingDriver() == true) {
+				list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+			}
+			else {
+				f_list->SetDescriptorHeaps(1, (ID3D12DescriptorHeap* const*)&topHeap);
+				f_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+			}
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags         = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Type          = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
+			barrier.UAV.pResource = top;
+			list->ResourceBarrier(1, &barrier);
+
+			list->Close();
+			queue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&list);
+			{
+				hr = queue->Signal(fence, ++fenceCnt);
+				assert(hr == S_OK);
+
+				if (fence->GetCompletedValue() != fenceCnt) {
+					void* handle = CreateEventEx(nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+					hr = fence->SetEventOnCompletion(fenceCnt, handle);
+					assert(hr == S_OK);
+
+					WaitForSingleObjectEx(handle, INFINITE, 0);
+					CloseHandle(handle);
+				}
+			}
+		}
+
+		topAdr = f_dev->GetWrappedPointerSimple(0, top->GetGPUVirtualAddress());
 	}
 	/*レイトレーシング結果関連*/
 	ID3D12DescriptorHeap* resultHeap = nullptr;
