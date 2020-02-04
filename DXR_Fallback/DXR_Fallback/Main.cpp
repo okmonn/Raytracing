@@ -455,6 +455,104 @@ int main() {
 			primitive->Unmap(0, nullptr);
 		}
 	}
+	/*加速構造(ボトムレベル)の生成*/
+	ID3D12Resource1* bottom = nullptr;
+	{
+		D3D12_RAYTRACING_GEOMETRY_DESC geo{};
+		geo.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+		geo.Triangles.VertexBuffer.StartAddress  = primitive->GetGPUVirtualAddress();
+		geo.Triangles.VertexBuffer.StrideInBytes = sizeof(float) * 3;
+		geo.Triangles.VertexCount                = std::uint32_t(primitive->GetDesc().Width / geo.Triangles.VertexBuffer.StrideInBytes);
+		geo.Triangles.VertexFormat               = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+		geo.Type                                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
+		input.DescsLayout    = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+		input.Flags          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+		input.NumDescs       = 1;
+		input.pGeometryDescs = &geo;
+		input.Type           = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
+		if (f_dev->UsingRaytracingDriver() == true) {
+			dev->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+		}
+		else {
+			f_dev->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+		}
+
+		Microsoft::WRL::ComPtr<ID3D12Resource1>scratch = nullptr;
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = info.ScratchDataSizeInBytes;
+
+		auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+			D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, nullptr, IID_PPV_ARGS(&scratch));
+		assert(hr == S_OK);
+
+		desc.Width = info.ResultDataMaxSizeInBytes;
+		if (f_dev->UsingRaytracingDriver() == true) {
+			hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nullptr, nullptr, IID_PPV_ARGS(&bottom));
+		}
+		else {
+			hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				f_dev->GetAccelerationStructureResourceState(), nullptr, nullptr, IID_PPV_ARGS(&bottom));
+		}
+		assert(hr == S_OK);
+		{
+			allo->Reset();
+			list->Reset(allo, nullptr);
+
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC desc{};
+			desc.DestAccelerationStructureData    = bottom->GetGPUVirtualAddress();
+			desc.Inputs                           = input;
+			desc.ScratchAccelerationStructureData = scratch->GetGPUVirtualAddress();
+			if (f_dev->UsingRaytracingDriver() == true) {
+				list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+			}
+			else {
+				f_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
+			}
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags         = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Type          = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
+			barrier.UAV.pResource = bottom;
+			list->ResourceBarrier(1, &barrier);
+
+			list->Close();
+			queue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&list);
+			{
+				hr = queue->Signal(fence, ++fenceCnt);
+				assert(hr == S_OK);
+				
+				if (fence->GetCompletedValue() != fenceCnt) {
+					void* handle = CreateEventEx(nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+					hr = fence->SetEventOnCompletion(fenceCnt, handle);
+					assert(hr == S_OK);
+
+					WaitForSingleObjectEx(handle, INFINITE, 0);
+					CloseHandle(handle);
+				}
+			}
+		}
+	}
+
 	/*レイトレーシング結果関連*/
 	ID3D12DescriptorHeap* resultHeap = nullptr;
 	ID3D12Resource1* resultRsc = nullptr;
