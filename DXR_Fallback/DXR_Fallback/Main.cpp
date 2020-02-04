@@ -456,8 +456,20 @@ int main() {
 		}
 	}
 	/*加速構造(ボトムレベル)の生成*/
+	ID3D12DescriptorHeap* bottomHeap = nullptr;
 	ID3D12Resource1* bottom = nullptr;
 	{
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC desc{};
+			desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			desc.NodeMask       = 0;
+			desc.NumDescriptors = 1;
+			desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+			auto hr = dev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&bottomHeap));
+			assert(hr == S_OK);
+		}
+
 		D3D12_RAYTRACING_GEOMETRY_DESC geo{};
 		geo.Flags                                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 		geo.Triangles.VertexBuffer.StartAddress  = primitive->GetGPUVirtualAddress();
@@ -516,6 +528,15 @@ int main() {
 		}
 		assert(hr == S_OK);
 		{
+			D3D12_UNORDERED_ACCESS_VIEW_DESC desc{};
+			desc.Buffer.Flags       = D3D12_BUFFER_UAV_FLAGS::D3D12_BUFFER_UAV_FLAG_RAW;
+			desc.Buffer.NumElements = std::uint32_t(bottom->GetDesc().Width / sizeof(std::uint32_t));
+			desc.Format             = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+			desc.ViewDimension      = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_BUFFER;
+
+			dev->CreateUnorderedAccessView(bottom, nullptr, &desc, bottomHeap->GetCPUDescriptorHandleForHeapStart());
+		}
+		{
 			allo->Reset();
 			list->Reset(allo, nullptr);
 
@@ -527,6 +548,7 @@ int main() {
 				list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 			}
 			else {
+				f_list->SetDescriptorHeaps(1, (ID3D12DescriptorHeap* const*)&bottomHeap);
 				f_list->BuildRaytracingAccelerationStructure(&desc, 0, nullptr);
 			}
 			D3D12_RESOURCE_BARRIER barrier{};
@@ -552,7 +574,70 @@ int main() {
 			}
 		}
 	}
+	/*加速構造(トップレベル)の生成*/
+	ID3D12DescriptorHeap* topHeap = nullptr;
+	ID3D12Resource1* top = nullptr;
+	{
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC desc{};
+			desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			desc.NodeMask       = 0;
+			desc.NumDescriptors = 1;
+			desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
+			auto hr = dev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&topHeap));
+			assert(hr == S_OK);
+		}
+
+		Microsoft::WRL::ComPtr<ID3D12Resource1>instance = nullptr;
+
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+
+		auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+			D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&instance));
+		assert(hr == S_OK);
+
+		D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS input{};
+		input.DescsLayout   = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+		input.Flags         = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+		input.InstanceDescs = instance->GetGPUVirtualAddress();
+		input.NumDescs      = 1;
+		input.Type          = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+		D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO info{};
+		if (f_dev->UsingRaytracingDriver() == true) {
+			dev->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+		}
+		else {
+			f_dev->GetRaytracingAccelerationStructurePrebuildInfo(&input, &info);
+		}
+
+		Microsoft::WRL::ComPtr<ID3D12Resource1>scratch = nullptr;
+		prop.Type  = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+		desc.Flags = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		desc.Width = info.ScratchDataSizeInBytes;
+
+		hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+			D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&scratch));
+		assert(hr == S_OK);
+	}
 	/*レイトレーシング結果関連*/
 	ID3D12DescriptorHeap* resultHeap = nullptr;
 	ID3D12Resource1* resultRsc = nullptr;
