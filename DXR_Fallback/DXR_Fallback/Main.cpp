@@ -762,7 +762,7 @@ int main() {
 		{
 			if (f_dev->UsingRaytracingDriver() == true) {
 				D3D12_SHADER_RESOURCE_VIEW_DESC desc{};
-				desc.RaytracingAccelerationStructure.Location = 0;
+				desc.RaytracingAccelerationStructure.Location = top->GetGPUVirtualAddress();
 				desc.Shader4ComponentMapping                  = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 				desc.ViewDimension                            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
 
@@ -771,9 +771,184 @@ int main() {
 			}
 		}
 	}
+	/*シェーダテーブルの生成*/
+	std::vector<ID3D12Resource1*>shaderTbl(_countof(exportName));
+	{
+		D3D12_HEAP_PROPERTIES prop{};
+		prop.CPUPageProperty      = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.CreationNodeMask     = 0;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN;
+		prop.Type                 = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
+		prop.VisibleNodeMask      = 0;
+
+		D3D12_RESOURCE_DESC desc{};
+		desc.Alignment        = 0;
+		desc.DepthOrArraySize = 1;
+		desc.Dimension        = D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Flags            = D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE;
+		desc.Format           = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		desc.Height           = 1;
+		desc.Layout           = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.MipLevels        = 1;
+		desc.SampleDesc       = { 1, 0 };
+		desc.Width            = (((D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + 8) + D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT - 1) * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT) / D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+
+		for (std::uint32_t i = 0; i < shaderTbl.size(); ++i) {
+			auto hr = dev->CreateCommittedResource1(&prop, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+				D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, nullptr, IID_PPV_ARGS(&shaderTbl[i]));
+			assert(hr == S_OK);
+
+			std::uint8_t* buf = nullptr;
+			hr = shaderTbl[i]->Map(0, nullptr, (void**)&buf);
+			assert(hr == S_OK);
+
+			void* data = nullptr;
+			if (f_dev->UsingRaytracingDriver() == true) {
+				Microsoft::WRL::ComPtr<ID3D12StateObjectProperties>property = nullptr;
+				hr = pipe->QueryInterface(IID_PPV_ARGS(&property));
+				assert(hr == S_OK);
+
+				data = property->GetShaderIdentifier(exportName[i]);
+			}
+			else {
+				data = f_pipe->GetShaderIdentifier(exportName[i]);
+			}
+			std::memcpy(buf, data, D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+			shaderTbl[i]->Unmap(0, nullptr);
+		}
+	}
+	/*サンプラーヒープの生成*/
+	ID3D12DescriptorHeap* sampler = nullptr;
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc{};
+		desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		desc.NodeMask       = 0;
+		desc.NumDescriptors = 1;
+		desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+
+		auto hr = dev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&sampler));
+		assert(hr == S_OK);
+	}
 
 	while (CheckMsg()) {
+		allo->Reset();
+		list->Reset(allo, nullptr);
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
 
+		if (f_dev->UsingRaytracingDriver() == true) {
+			list->SetPipelineState1(pipe);
+		}
+		else {
+			list->SetComputeRootSignature(global);
+			ID3D12DescriptorHeap* heap[] = {
+				resultHeap,
+				sampler
+			};
+			f_list->SetDescriptorHeaps(_countof(heap), heap);
+			list->SetComputeRootDescriptorTable(0, resultHeap->GetGPUDescriptorHandleForHeapStart());
+			f_list->SetTopLevelAccelerationStructure(1, topAdr);
+			f_list->SetPipelineState1(f_pipe);
+		}
+
+		D3D12_DISPATCH_RAYS_DESC desc{};
+		desc.Depth  = 1;
+		desc.Height = sizeY;
+		desc.Width  = sizeX;
+
+		desc.RayGenerationShaderRecord.SizeInBytes  = shaderTbl[0]->GetDesc().Width;
+		desc.RayGenerationShaderRecord.StartAddress = shaderTbl[0]->GetGPUVirtualAddress();
+
+		desc.MissShaderTable.SizeInBytes   = shaderTbl[1]->GetDesc().Width;
+		desc.MissShaderTable.StartAddress  = shaderTbl[1]->GetGPUVirtualAddress();
+		desc.MissShaderTable.StrideInBytes = shaderTbl[1]->GetDesc().Width;
+
+		desc.HitGroupTable.SizeInBytes   = shaderTbl[2]->GetDesc().Width;
+		desc.HitGroupTable.StartAddress  = shaderTbl[2]->GetGPUVirtualAddress();
+		desc.HitGroupTable.StrideInBytes = shaderTbl[2]->GetDesc().Width;
+
+		if (f_dev->UsingRaytracingDriver() == true) {
+			list->DispatchRays(&desc);
+		}
+		else {
+			f_list->DispatchRays(&desc);
+		}
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = resultRsc;
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
+		list->CopyResource(rtvRsc[swap->GetCurrentBackBufferIndex()], resultRsc);
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = resultRsc;
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
+		{
+			D3D12_RESOURCE_BARRIER barrier{};
+			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			list->ResourceBarrier(1, &barrier);
+		}
+		list->Close();
+		queue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&list);
+		{
+			auto hr = queue->Signal(fence, ++fenceCnt);
+			assert(hr == S_OK);
+
+			if (fence->GetCompletedValue() != fenceCnt) {
+				void* handle = CreateEventEx(nullptr, nullptr, 0, EVENT_ALL_ACCESS);
+				hr = fence->SetEventOnCompletion(fenceCnt, handle);
+				assert(hr == S_OK);
+
+				WaitForSingleObjectEx(handle, INFINITE, 0);
+				CloseHandle(handle);
+			}
+
+			swap->Present(1, 0);
+		}
 	}
 
 	return 0;
