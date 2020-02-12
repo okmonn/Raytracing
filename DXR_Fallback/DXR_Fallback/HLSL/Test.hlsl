@@ -1,7 +1,7 @@
-/*加速構造*/
-RaytracingAccelerationStructure AS : register(t0);
 /*出力データ*/
 RWTexture2D<float4> output : register(u0);
+/*加速構造*/
+RaytracingAccelerationStructure AS : register(t0);
 
 /*ペイロード*/
 struct Payload {
@@ -30,9 +30,6 @@ void RayGen(void) {
     Payload payload;
     TraceRay(AS, 0 /*rayFlags*/, 0xFF, 0 /* ray index*/, 0, 0, ray, payload);
     output[launchIndex.xy] = float4(payload.color, 1.0f);
-
-
-	output[launchIndex.xy] = float4(1.0f, 0.0f, 0.0f, 1.0f);
 }
 
 /*ミス*/

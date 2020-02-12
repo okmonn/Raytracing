@@ -817,18 +817,6 @@ int main() {
 			shaderTbl[i]->Unmap(0, nullptr);
 		}
 	}
-	/*サンプラーヒープの生成*/
-	ID3D12DescriptorHeap* sampler = nullptr;
-	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc{};
-		desc.Flags          = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		desc.NodeMask       = 0;
-		desc.NumDescriptors = 1;
-		desc.Type           = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-
-		auto hr = dev->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&sampler));
-		assert(hr == S_OK);
-	}
 
 	while (CheckMsg()) {
 		allo->Reset();
@@ -836,9 +824,9 @@ int main() {
 		{
 			D3D12_RESOURCE_BARRIER barrier{};
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
-			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT;
+			barrier.Transition.pResource   = resultRsc;
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
 			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 			barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			list->ResourceBarrier(1, &barrier);
@@ -851,10 +839,10 @@ int main() {
 			list->SetComputeRootSignature(global);
 			ID3D12DescriptorHeap* heap[] = {
 				resultHeap,
-				sampler
 			};
 			f_list->SetDescriptorHeaps(_countof(heap), heap);
 			list->SetComputeRootDescriptorTable(0, resultHeap->GetGPUDescriptorHandleForHeapStart());
+			list->SetComputeRootShaderResourceView(1, top->GetGPUVirtualAddress());
 			f_list->SetTopLevelAccelerationStructure(1, topAdr);
 			f_list->SetPipelineState1(f_pipe);
 		}
@@ -884,9 +872,9 @@ int main() {
 		{
 			D3D12_RESOURCE_BARRIER barrier{};
 			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
-			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.pResource   = resultRsc;
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 			barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			list->ResourceBarrier(1, &barrier);
@@ -894,9 +882,9 @@ int main() {
 		{
 			D3D12_RESOURCE_BARRIER barrier{};
 			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource   = resultRsc;
-			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
+			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT;
 			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			list->ResourceBarrier(1, &barrier);
@@ -905,29 +893,9 @@ int main() {
 		{
 			D3D12_RESOURCE_BARRIER barrier{};
 			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource   = resultRsc;
-			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE;
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			list->ResourceBarrier(1, &barrier);
-		}
-		{
-			D3D12_RESOURCE_BARRIER barrier{};
-			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
-			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
-			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
-			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			list->ResourceBarrier(1, &barrier);
-		}
-		{
-			D3D12_RESOURCE_BARRIER barrier{};
-			barrier.Flags                  = D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE;
 			barrier.Transition.pResource   = rtvRsc[swap->GetCurrentBackBufferIndex()];
 			barrier.Transition.StateAfter  = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT;
-			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barrier.Transition.StateBefore = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
 			barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			list->ResourceBarrier(1, &barrier);
